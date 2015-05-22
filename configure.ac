@@ -68,6 +68,9 @@ AM_COND_IF([WANT_TIME_TESTS],
 
 PKG_CHECK_MODULES([AO],[ao >= 1.2.0],[ao=yes],[ao=no])
 
+LIBS="$AO_LIBS $LIBS"
+CFLAGS="$AO_CFLAGS $CFLAGS"
+
 AS_IF([test "x$ao" = "xyes"],
   [AC_DEFINE([HAVE_AO_H],[1],[true if AO header file is present])
    CPPFLAGS="$LIBS $AO_CPPFLAGS"
@@ -89,13 +92,35 @@ AC_INCLUDES_DEFAULT
 #endif
 ])
 
-dnl Stuff
-dnl VICARE_CONSTANT_TESTS([XML_TRUE XML_FALSE])
+VICARE_CONSTANT_TESTS([AO_TYPE_LIVE
+    AO_TYPE_FILE
+    AO_ENODRIVER
+    AO_ENOTFILE
+    AO_ENOTLIVE
+    AO_EBADOPTION
+    AO_EOPENDEVICE
+    AO_EOPENFILE
+    AO_EFILEEXISTS
+    AO_EBADFORMAT
+    AO_EFAIL
+    AO_FMT_LITTLE
+    AO_FMT_BIG
+    AO_FMT_NATIVE])
 
 #page
 #### C language functions from the header file "libesmtp.h"
 
-dnl AC_CHECK_FUNCS([ao_version])
+## library setup/teardown
+AC_CHECK_FUNCS([ao_initialize ao_shutdown])
+
+## device setup/playback/teardown
+AC_CHECK_FUNCS([ao_append_global_option ao_append_option ao_free_options ao_open_live ao_open_file ao_play ao_close])
+
+## driver information
+AC_CHECK_FUNCS([ao_driver_id ao_default_driver_id ao_driver_info ao_driver_info_list ao_file_extension])
+
+## miscellaneous
+AC_CHECK_FUNCS([ao_is_big_endian])
 
 #page
 #### finish

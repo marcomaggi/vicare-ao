@@ -24,7 +24,7 @@ doc_vicare_ao_TEXINFOS		= doc/fdl-1.3.texi doc/gpl-3.0.texi doc/macros.texi
 #page
 #### C language library
 
-AM_CFLAGS		= -Wall $(AO_CFLAGS)
+AM_CFLAGS		= -Wall
 
 vicare_ao_CURRENT	= @vicare_ao_VERSION_INTERFACE_CURRENT@
 vicare_ao_REVISION	= @vicare_ao_VERSION_INTERFACE_REVISION@
@@ -32,7 +32,7 @@ vicare_ao_AGE		= @vicare_ao_VERSION_INTERFACE_AGE@
 vicare_ao_VERSION	= $(vicare_ao_CURRENT):$(vicare_ao_REVISION):$(vicare_ao_AGE)
 
 lib_LTLIBRARIES			= libvicare-ao.la
-libvicare_ao_la_LDFLAGS		= -version-info $(vicare_ao_VERSION) $(AO_LIBS)
+libvicare_ao_la_LDFLAGS		= -version-info $(vicare_ao_VERSION)
 libvicare_ao_la_SOURCES		= \
 	src/vicare-ao-core.c		\
 	src/vicare-ao-version.c		\

@@ -61,6 +61,22 @@ dist_lib_vicare_multimedia_ao_features_vicare_sls_DATA = lib/vicare/multimedia/a
 endif
 CLEANFILES += lib/vicare/multimedia/ao/features.fasl
 
+lib/vicare/multimedia/ao/cond-expand.fasl: \
+		lib/vicare/multimedia/ao/cond-expand.sls \
+		lib/vicare/multimedia/ao/features.fasl \
+		lib/vicare/multimedia/ao.fasl \
+		$(FASL_PREREQUISITES)
+	$(VICARE_COMPILE_RUN) --output $@ --compile-library $<
+
+lib_vicare_multimedia_ao_cond_expand_fasldir = $(bundledlibsdir)/vicare/multimedia/ao
+lib_vicare_multimedia_ao_cond_expand_slsdir  = $(bundledlibsdir)/vicare/multimedia/ao
+nodist_lib_vicare_multimedia_ao_cond_expand_fasl_DATA = lib/vicare/multimedia/ao/cond-expand.fasl
+if WANT_INSTALL_SOURCES
+dist_lib_vicare_multimedia_ao_cond_expand_sls_DATA = lib/vicare/multimedia/ao/cond-expand.sls
+endif
+EXTRA_DIST += lib/vicare/multimedia/ao/cond-expand.sls
+CLEANFILES += lib/vicare/multimedia/ao/cond-expand.fasl
+
 
 ### end of file
 # Local Variables:

@@ -27,13 +27,19 @@
 
 #!r6rs
 (import (vicare)
-  (vicare multimedia ao)
-  (vicare multimedia ao constants)
+  (prefix (vicare multimedia ao) ao.)
+  (prefix (vicare multimedia ao constants) ao.)
   (vicare arguments validation)
   (vicare checks))
 
 (check-set-mode! 'report-failed)
 (check-display "*** testing Vicare Libao bindings\n")
+
+(ao.ao-initialize)
+
+;; These do nothing.
+(ao.ao-initialise)
+(ao.ao-initialise)
 
 
 ;;;; helpers
@@ -43,54 +49,54 @@
 (parametrise ((check-test-name	'version))
 
   (check
-      (fixnum? (vicare-ao-version-interface-current))
+      (fixnum? (ao.vicare-ao-version-interface-current))
     => #t)
 
   (check
-      (fixnum? (vicare-ao-version-interface-revision))
+      (fixnum? (ao.vicare-ao-version-interface-revision))
     => #t)
 
   (check
-      (fixnum? (vicare-ao-version-interface-age))
+      (fixnum? (ao.vicare-ao-version-interface-age))
     => #t)
 
   (check
-      (string? (vicare-ao-version))
+      (string? (ao.vicare-ao-version))
     => #t)
 
   #t)
 
 
-(parametrise ((check-test-name		'struct-alpha)
+(parametrise ((check-test-name		'struct-option)
 	      (struct-guardian-logger	#t))
 
   (define who 'test)
 
   (check	;this will be garbage collected
-      (let ((voice (ao-alpha-initialise)))
-;;;(debug-print voice)
-	(ao-alpha? voice))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+;;;(debug-print opt)
+	(ao.ao-option? opt))
     => #t)
 
   (check
-      (ao-alpha?/alive (ao-alpha-initialise))
+      (ao.ao-option?/alive (ao.ao-append-option #f "client_name" "vicare-ao"))
     => #t)
 
   (check	;single finalisation
-      (let ((voice (ao-alpha-initialise)))
-  	(ao-alpha-finalise voice))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+  	(ao.ao-free-options opt))
     => #f)
 
   (check	;double finalisation
-      (let ((voice (ao-alpha-initialise)))
-  	(ao-alpha-finalise voice)
-  	(ao-alpha-finalise voice))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+  	(ao.ao-free-options opt)
+  	(ao.ao-free-options opt))
     => #f)
 
   (check	;alive predicate after finalisation
-      (let ((voice (ao-alpha-initialise)))
-  	(ao-alpha-finalise voice)
-  	(ao-alpha?/alive voice))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+  	(ao.ao-free-options opt)
+  	(ao.ao-option?/alive opt))
     => #f)
 
 ;;; --------------------------------------------------------------------
@@ -98,22 +104,22 @@
 
   (check
       (with-result
-       (let ((voice (ao-alpha-initialise)))
-	 (set-ao-alpha-custom-destructor! voice (lambda (voice)
-							(add-result 123)))
-	 (ao-alpha-finalise voice)))
+	(let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	  (ao.set-ao-option-custom-destructor! opt (lambda (opt)
+						     (add-result 123)))
+	  (ao.ao-free-options opt)))
     => '(#f (123)))
 
 ;;; --------------------------------------------------------------------
 ;;; hash
 
   (check-for-true
-   (integer? (ao-alpha-hash (ao-alpha-initialise))))
+   (integer? (ao.ao-option-hash (ao.ao-append-option #f "client_name" "vicare-ao"))))
 
   (check
-      (let ((A (ao-alpha-initialise))
-	    (B (ao-alpha-initialise))
-	    (T (make-hashtable ao-alpha-hash eq?)))
+      (let ((A (ao.ao-append-option #f "client_name" "vicare-ao"))
+	    (B (ao.ao-append-option #f "client_name" "vicare-ao"))
+	    (T (make-hashtable ao.ao-option-hash eq?)))
 	(hashtable-set! T A 1)
 	(hashtable-set! T B 2)
 	(list (hashtable-ref T A #f)
@@ -124,87 +130,61 @@
 ;;; properties
 
   (check
-      (let ((S (ao-alpha-initialise)))
-	(ao-alpha-property-list S))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	(ao.ao-option-property-list opt))
     => '())
 
   (check
-      (let ((S (ao-alpha-initialise)))
-	(ao-alpha-putprop S 'ciao 'salut)
-	(ao-alpha-getprop S 'ciao))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	(ao.ao-option-putprop opt 'ciao 'salut)
+	(ao.ao-option-getprop opt 'ciao))
     => 'salut)
 
   (check
-      (let ((S (ao-alpha-initialise)))
-	(ao-alpha-getprop S 'ciao))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	(ao.ao-option-getprop opt 'ciao))
     => #f)
 
   (check
-      (let ((S (ao-alpha-initialise)))
-	(ao-alpha-putprop S 'ciao 'salut)
-	(ao-alpha-remprop S 'ciao)
-	(ao-alpha-getprop S 'ciao))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	(ao.ao-option-putprop opt 'ciao 'salut)
+	(ao.ao-option-remprop opt 'ciao)
+	(ao.ao-option-getprop opt 'ciao))
     => #f)
 
   (check
-      (let ((S (ao-alpha-initialise)))
-	(ao-alpha-putprop S 'ciao 'salut)
-	(ao-alpha-putprop S 'hello 'ohayo)
-	(list (ao-alpha-getprop S 'ciao)
-	      (ao-alpha-getprop S 'hello)))
+      (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
+	(ao.ao-option-putprop opt 'ciao 'salut)
+	(ao.ao-option-putprop opt 'hello 'ohayo)
+	(list (ao.ao-option-getprop opt 'ciao)
+	      (ao.ao-option-getprop opt 'hello)))
     => '(salut ohayo))
 
 ;;; --------------------------------------------------------------------
-;;; arguments validation
+;;; appending options
 
-  (check-for-true
-   (let ((S (ao-alpha-initialise)))
-     (with-arguments-validation (who)
-	 ((ao-alpha	S))
-       #t)))
+  (check
+      (let* ((opt (ao.ao-append-option #f "client_name" "vicare-ao"))
+	     (opt (ao.ao-append-option opt  "client_name" "vicare-ao"))
+	     (opt (ao.ao-append-option opt  "client_name" "vicare-ao")))
+	(ao.ao-free-options opt))
+    => #f)
 
-  (check-for-true
-   (let ((S (ao-alpha-initialise)))
-     (ao-alpha-finalise S)
-     (with-arguments-validation (who)
-	 ((ao-alpha	S))
-       #t)))
-
-  (check-for-true
-   (let ((S (ao-alpha-initialise)))
-     (with-arguments-validation (who)
-	 ((ao-alpha/alive	S))
-       #t)))
-
-;;;
-
-  (check-for-procedure-argument-violation
-      (let ((S 123))
-	(with-arguments-validation (who)
-	    ((ao-alpha	S))
-	  #t))
-    => (list who '(123)))
-
-  (check-for-procedure-argument-violation
-      (let ((S 123))
-	(with-arguments-validation (who)
-	    ((ao-alpha/alive	S))
-	  #t))
-    => (list who '(123)))
-
-  (let ((S (ao-alpha-initialise)))
-    (check-for-procedure-argument-violation
-	(begin
-	  (ao-alpha-finalise S)
-	  (with-arguments-validation (who)
-	      ((ao-alpha/alive	S))
-	    #t))
-      => (list who (list S))))
+  (check
+      (let* ((opt (ao.ao-append-option #f "client_name" "vicare-ao"))
+	     (opt (ao.ao-append-option opt  "alpha" "beta"))
+	     (opt (ao.ao-append-option opt  "delta" "gamma")))
+	(ao.ao-option->alist opt))
+    => '(("client_name" . "vicare-ao")
+	 ("alpha" . "beta")
+	 ("delta" . "gamma")))
 
   (collect))
 
 
 ;;;; done
+
+(ao.ao-shutdown)
 
 (check-report)
 

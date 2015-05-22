@@ -64,7 +64,29 @@ main (int argc, const char *const argv[])
 #!r6rs\n\
 (library (vicare multimedia ao features)\n\
   (export\n\
-    HAVE_AO_OPTION\n\
+    ;; initialisation and shutdown features\n\
+    HAVE_AO_INITIALIZE\n\
+    HAVE_AO_SHUTDOWN\n\
+    \n\
+    ;; device setup/playback/teardown features\n\
+    HAVE_AO_APPEND_GLOBAL_OPTION\n\
+    HAVE_AO_APPEND_OPTION\n\
+    HAVE_AO_FREE_OPTIONS\n\
+    HAVE_AO_OPEN_LIVE\n\
+    HAVE_AO_OPEN_FILE\n\
+    HAVE_AO_PLAY\n\
+    HAVE_AO_CLOSE\n\
+    \n\
+    ;; driver information features\n\
+    HAVE_AO_DRIVER_ID\n\
+    HAVE_AO_DEFAULT_DRIVER_ID\n\
+    HAVE_AO_DRIVER_INFO\n\
+    HAVE_AO_DRIVER_INFO_LIST\n\
+    HAVE_AO_FILE_EXTENSION\n\
+    \n\
+    ;; miscellaneous features\n\
+    HAVE_AO_IS_BIG_ENDIAN\n\
+    \n\
     )\n\
   (import (rnrs))\n\
 \n\
@@ -79,8 +101,139 @@ main (int argc, const char *const argv[])
 ;;;; code\n\n");
 
 
-printf("(define-inline-constant HAVE_AO_OPTION %s)\n",
-#ifdef HAVE_AO_OPTION
+/** --------------------------------------------------------------------
+ ** initialisation and shutdown features.
+ ** ----------------------------------------------------------------- */
+
+printf("(define-inline-constant HAVE_AO_INITIALIZE %s)\n",
+#ifdef HAVE_AO_INITIALIZE
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_SHUTDOWN %s)\n",
+#ifdef HAVE_AO_SHUTDOWN
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+
+/** --------------------------------------------------------------------
+ ** device setup/playback/teardown features.
+ ** ----------------------------------------------------------------- */
+
+printf("(define-inline-constant HAVE_AO_APPEND_GLOBAL_OPTION %s)\n",
+#ifdef HAVE_AO_APPEND_GLOBAL_OPTION
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_APPEND_OPTION %s)\n",
+#ifdef HAVE_AO_APPEND_OPTION
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_FREE_OPTIONS %s)\n",
+#ifdef HAVE_AO_FREE_OPTIONS
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_OPEN_LIVE %s)\n",
+#ifdef HAVE_AO_OPEN_LIVE
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_OPEN_FILE %s)\n",
+#ifdef HAVE_AO_OPEN_FILE
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_PLAY %s)\n",
+#ifdef HAVE_AO_PLAY
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_CLOSE %s)\n",
+#ifdef HAVE_AO_CLOSE
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+
+/** --------------------------------------------------------------------
+ ** driver information features.
+ ** ----------------------------------------------------------------- */
+
+printf("(define-inline-constant HAVE_AO_DRIVER_ID %s)\n",
+#ifdef HAVE_AO_DRIVER_ID
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_DEFAULT_DRIVER_ID %s)\n",
+#ifdef HAVE_AO_DEFAULT_DRIVER_ID
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_DRIVER_INFO %s)\n",
+#ifdef HAVE_AO_DRIVER_INFO
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_DRIVER_INFO_LIST %s)\n",
+#ifdef HAVE_AO_DRIVER_INFO_LIST
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+printf("(define-inline-constant HAVE_AO_FILE_EXTENSION %s)\n",
+#ifdef HAVE_AO_FILE_EXTENSION
+  "#t"
+#else
+  "#f"
+#endif
+  );
+
+
+/** --------------------------------------------------------------------
+ ** miscellaneous features.
+ ** ----------------------------------------------------------------- */
+
+printf("(define-inline-constant HAVE_AO_IS_BIG_ENDIAN %s)\n",
+#ifdef HAVE_AO_IS_BIG_ENDIAN
   "#t"
 #else
   "#f"

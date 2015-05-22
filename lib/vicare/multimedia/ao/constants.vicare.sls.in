@@ -26,10 +26,23 @@
 
 (library (vicare multimedia ao constants)
   (export
+    AO_TYPE_LIVE
+    AO_TYPE_FILE
 
-    THE_AO
+    AO_ENODRIVER
+    AO_ENOTFILE
+    AO_ENOTLIVE
+    AO_EBADOPTION
+    AO_EOPENDEVICE
+    AO_EOPENFILE
+    AO_EFILEEXISTS
+    AO_EBADFORMAT
 
-    )
+    AO_EFAIL
+
+    AO_FMT_LITTLE
+    AO_FMT_BIG
+    AO_FMT_NATIVE)
   (import (rename (only (vicare)
 			define-inline-constant)
 		  (define-inline-constant	defc)))
@@ -37,16 +50,28 @@
 
 ;;;; constants
 
-;;; Preprocessor symbols: XML_Bool
-;;(defc XML_TRUE		@VALUEOF_XML_TRUE@)
+(defc AO_TYPE_LIVE		@VALUEOF_AO_TYPE_LIVE@)
+(defc AO_TYPE_FILE		@VALUEOF_AO_TYPE_FILE@)
 
-(defc THE_AO		123)
+(defc AO_ENODRIVER		@VALUEOF_AO_ENODRIVER@)
+(defc AO_ENOTFILE		@VALUEOF_AO_ENOTFILE@)
+(defc AO_ENOTLIVE		@VALUEOF_AO_ENOTLIVE@)
+(defc AO_EBADOPTION		@VALUEOF_AO_EBADOPTION@)
+(defc AO_EOPENDEVICE		@VALUEOF_AO_EOPENDEVICE@)
+(defc AO_EOPENFILE		@VALUEOF_AO_EOPENFILE@)
+(defc AO_EFILEEXISTS		@VALUEOF_AO_EFILEEXISTS@)
+(defc AO_EBADFORMAT		@VALUEOF_AO_EBADFORMAT@)
 
+(defc AO_EFAIL			@VALUEOF_AO_EFAIL@)
+
+(defc AO_FMT_LITTLE		@VALUEOF_AO_FMT_LITTLE@)
+(defc AO_FMT_BIG		@VALUEOF_AO_FMT_BIG@)
+(defc AO_FMT_NATIVE		@VALUEOF_AO_FMT_NATIVE@)
 
 
 ;;;; done
 
-)
+#| end of library |# )
 
 ;;; end of file
 ;; Local Variables:

@@ -140,7 +140,6 @@ entitled ``@gnu{} Free Documentation License''.
 @menu
 * overview::                    Overview of the package.
 * plain::                       Plain programming interface.
-* nau::                         Nausicaa programming interface.
 
 Appendices
 
@@ -220,11 +219,11 @@ It exports one identifier syntax binding for each @code{HAVE_} constant
 defined by the @command{configure} script, expanding to @true{} or
 @false{}.
 
-@item @library{nausicaa multimedia ao}
-@cindex Library @library{nausicaa multimedia ao}
-@cindex @library{nausicaa multimedia ao}, library
-An @oopp{} @api{} built on top of the @library{nausicaa} language and
-the library @library{vicare multimedia ao}.
+@item @library{vicare multimedia ao cond-expand}
+@cindex Library @library{vicare multimedia ao cond-expand}
+@cindex @library{vicare multimedia ao cond-expand}, library
+Export a syntactic binding to determine at expand time which functions
+are available.
 @end table
 
 Scheme libraries are installed under the directory:
@@ -248,7 +247,9 @@ for @value{FOREIGN_PACKAGE}.
 
 @menu
 * plain version::               @value{PACKAGE} version informations.
-* plain alpha::                 Alpha objects.
+* plain init::                  Library initialisation and finalisation.
+* plain option::                Device option objects.
+* plain info::                  Device driver informations.
 * plain misc::                  Miscellaneous operations.
 @end menu
 
@@ -278,49 +279,81 @@ Return a Scheme string representing the version number.
 @end defun
 
 @c page
-@node plain alpha
-@section Alpha objects
-
-
-@menu
-* plain alpha struct::          Alpha data structure.
-* plain alpha ops::             Operating on alpha objects.
-@end menu
-
-@c page
-@node plain alpha struct
-@subsection Alpha data structure
+@node plain init
+@section Library initialisation and finalisation
 
 
 The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@deftp {Struct Type} ao-alpha
-@cindex Argument @var{alpha}
-@cindex @var{alpha} argument
+@defun ao-initialize
+@defunx ao-initialise
+Initialises the internal @libao{} data structures and loads all of the
+available plugins.  The system and user configuration files are also
+read at this time if available.  This function must be called in the
+main thread and before any other @libao{} functions can be used.
+
+This Scheme function can be called any number of times: the first time
+it will initialise the library, subsequent times nothing happens.  After
+a call to @func{ao-shutdown}: the first call to @func{ao-initialize}
+will initialise the library again.
+@end defun
+
+
+@defun ao-shutdown
+Unload all of the plugins and deallocates any internal data structures
+the library has created.  It should be called prior to program exit.
+
+This Scheme function can be called any number of times: only if the
+library is currently initialised, it will shut it down; otherwise
+nothing happens.
+@end defun
+
+@c page
+@node plain option
+@section Device option objects
+
+
+@menu
+* plain option struct::         Device option data structure.
+* plain option ops::            Operating on device option objects.
+@end menu
+
+@c page
+@node plain option struct
+@subsection Option data structure
+
+
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
+
+
+@deftp {Struct Type} ao-option
+@cindex Argument @var{option}
+@cindex @var{option} argument
 Opaque structure type referencing an instance of the C language type
-@code{ao_alpha}.  When instances of this type are used as
+@code{ao_option}.  When instances of this type are used as
 arguments to functions: this documentation identifies them as
-@var{alpha}.
+@var{option}.
 
 Instances of this type must be finalised with
-@func{ao-alpha-finalise}; whenever an instance of this type is
-garbage collected: @func{ao-alpha-finalise} is automatically
+@func{ao-option-finalise}; whenever an instance of this type is
+garbage collected: @func{ao-option-finalise} is automatically
 applied to it and any error ignored.
 
 In certain contexts, instances of this type own the referenced
-@code{ao_alpha} value, in other contexts they do not:
+@code{ao_option} value, in other contexts they do not:
 
 @itemize
 @item
-Finalising a @objtype{ao-alpha} instance owning the
-@code{ao_alpha} value, causes finalisation of the
-@code{ao_alpha} value too.
+Finalising a @objtype{ao-option} instance owning the
+@code{ao_option} value, causes finalisation of the
+@code{ao_option} value too.
 
 @item
-Finalising a @objtype{ao-alpha} instance @strong{not} owning the
-@code{ao_alpha} value, leaves the @code{ao_alpha} untouched.
+Finalising a @objtype{ao-option} instance @strong{not} owning the
+@code{ao_option} value, leaves the @code{ao_option} untouched.
 @end itemize
 
 @noindent
@@ -328,14 +361,14 @@ this should happen transparently.
 @end deftp
 
 
-@defun ao-alpha? @var{obj}
-Return @true{} if @var{obj} is an instance of @objtype{ao-alpha};
+@defun ao-option? @var{obj}
+Return @true{} if @var{obj} is an instance of @objtype{ao-option};
 otherwise return @false{}.
 @end defun
 
 
-@defun ao-alpha?/alive @var{obj}
-Return @true{} if @var{obj} is an instance of @objtype{ao-alpha} and it
+@defun ao-option?/alive @var{obj}
+Return @true{} if @var{obj} is an instance of @objtype{ao-option} and it
 has not been finalised; return @false{} otherwise.
 @end defun
 
@@ -344,29 +377,29 @@ has not been finalised; return @false{} otherwise.
 @subsubheading Object properties
 
 
-@defun ao-alpha-putprop @var{alpha} @var{key} @var{value}
-Add a new property @var{key} to the property list of @var{alpha};
+@defun ao-option-putprop @var{option} @var{key} @var{value}
+Add a new property @var{key} to the property list of @var{option};
 @var{key} must be a symbol.  If @var{key} is already set: the old entry
 is mutated to reference the new @var{value}.
 @end defun
 
 
-@defun ao-alpha-getprop @var{alpha} @var{key}
+@defun ao-option-getprop @var{option} @var{key}
 Return the value of the property @var{key} in the property list of
-@var{alpha}; if @var{key} is not set: return @false{}.  @var{key} must
+@var{option}; if @var{key} is not set: return @false{}.  @var{key} must
 be a symbol.
 @end defun
 
 
-@defun ao-alpha-remprop @var{alpha} @var{key}
-Remove the property @var{key} from the property list of @var{alpha}; if
+@defun ao-option-remprop @var{option} @var{key}
+Remove the property @var{key} from the property list of @var{option}; if
 @var{key} is not set: nothing happens.  @var{key} must be a symbol.
 @end defun
 
 
-@defun ao-alpha-property-list @var{alpha}
+@defun ao-option-property-list @var{option}
 Return a new association list representing the property list of
-@var{alpha}.  The order of the entries is the same as the property
+@var{option}.  The order of the entries is the same as the property
 creation order.
 @end defun
 
@@ -375,14 +408,14 @@ creation order.
 @subsubheading Custom destructor
 
 
-@defun alpha-custom-destructor @var{alpha}
-@defunx set-alpha-custom-destructor! @var{alpha} @var{func}
-Retrieve or set a destructor function associated to @var{alpha}.
+@defun option-custom-destructor @var{option}
+@defunx set-option-custom-destructor! @var{option} @var{func}
+Retrieve or set a destructor function associated to @var{option}.
 
-Whenever @var{alpha} is finalised, either explicitly with
-@func{ao-alpha-finalise} or implicitly by the garbage collector,
-@var{func} is applied to @var{alpha} before the internal state of
-@var{alpha} is destroyed.
+Whenever @var{option} is finalised, either explicitly with
+@func{ao-option-finalise} or implicitly by the garbage collector,
+@var{func} is applied to @var{option} before the internal state of
+@var{option} is destroyed.
 @end defun
 
 @c ------------------------------------------------------------
@@ -390,62 +423,110 @@ Whenever @var{alpha} is finalised, either explicitly with
 @subsubheading Other operations
 
 
-@defun ao-alpha-hash @var{alpha}
-Return an exact integer to be used as hashtable key for @var{alpha}.
-Hashtables having a @objtype{ao-alpha} as key can be instantiated
+@defun ao-option-hash @var{option}
+Return an exact integer to be used as hashtable key for @var{option}.
+Hashtables having a @objtype{ao-option} as key can be instantiated
 as follows:
 
 @example
-(make-hashtable ao-alpha-hash eq?)
+(make-hashtable ao-option-hash eq?)
 @end example
 @end defun
 
-@c ------------------------------------------------------------
-
-@subsubheading Arguments validation
-
-The following bindings are meant to be used with the facilities of the
-library @library{vicare arguments validation}.
-
-
-@deffn {Validation Clause} ao-alpha @var{obj}
-@deffnx {Validation Clause} false-or-ao-alpha @var{obj}
-Succeed if @var{obj} satisfies the predicate @func{ao-alpha?}; the
-second clause also accepts @false{}.
-@end deffn
-
-
-@deffn {Validation Clause} ao-alpha/alive @var{obj}
-@deffnx {Validation Clause} false-or-ao-alpha/alive @var{obj}
-Succeed if @var{obj} satisfies the predicate @func{ao-alpha?/alive};
-the second clause also accepts @false{}.
-@end deffn
-
-
 @c page
-@node plain alpha ops
-@subsection Operating on alpha objects
+@node plain option ops
+@subsection Operating on option objects
 
 
 The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@defun ao-alpha-initialise
-Build and return a new @objtype{ao-alpha} object; if an error
-occurs raise an exception.
+@defun ao-append-option @var{opt} @var{key} @var{val}
+When the argument @var{opt} is @false{}: build and return a new
+@objtype{ao-option} struct initialised with the single entry represented
+by @var{key} and @var{val}.  When successful: return the
+@objtype{ao-option} struct; if an error occurs: return @false{}.
+
+When the argument @var{opt} is a live @objtype{ao-option}: append a
+@var{key}/@var{val} pair to the linked list of options.  When
+successful: return @var{opt} itself; if an error occurs: return
+@false{}.
+
+The arguments @var{key} and @var{val} must be generalised C strings with
+@ascii{} representation (@libsref{cbuffers strings, Introduction to
+generalised C strings}).
 @end defun
 
 
-@defun ao-alpha-finalise @var{alpha}
-Finalise @var{alpha}; return unspecified values.  It is fine to apply
-this function multiple times to the same @var{alpha} value: the first
+@defun ao-free-options @var{option}
+Finalise @var{option}; return unspecified values.  It is fine to apply
+this function multiple times to the same @var{option} value: the first
 time the underlying data is finalised, the subsequent times nothing
 happens.
 
-If this function is applied to an @var{alpha} value not owning the
-underlying @code{ao_alpha} value: @var{alpha} is finalised, but
-the @code{ao_alpha} value is left alone.
+If this function is applied to an @var{option} value not owning the
+underlying @code{ao_option} value: @var{option} is finalised, but the
+@code{ao_option} value is left alone.
+@end defun
+
+
+@defun ao-option->alist @var{option}
+Build and return an alist of Scheme strings representing the list of
+options in @var{option}.
+@end defun
+
+
+@defun ao-append-global-option @var{key} @var{val}
+Append a key--value pair to the internal linked list of global options
+obeyed by @libao{} itself, as well as passed to any driver in use.
+@var{key} and @var{val} must be generalised C strings with @ascii{}
+representation (@libsref{cbuffers strings, Introduction to generalised C
+strings}).
+@end defun
+
+
+Usage example:
+
+@lisp
+(import (vicare)
+  (prefix (vicare multimedia ao) ao.))
+
+(define opt
+  (ao.ao-append-option #f "client_name" "My Spiffy App"))
+
+(ao.ao-option->alist opt)
+@result{} (("client_name" . "My Spiffy App"))
+
+(ao.ao-free-options opt)
+@end lisp
+
+@c page
+@node plain info
+@section Device driver informations
+
+
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
+
+
+@defun ao-driver-id
+@end defun
+
+
+@defun ao-default-driver-id
+@end defun
+
+
+@defun ao-driver-info
+@end defun
+
+
+@defun ao-driver-info-list
+@end defun
+
+
+@defun ao-file-extension
 @end defun
 
 @c page
@@ -457,187 +538,33 @@ The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@c page
-@node nau
-@chapter Nausicaa programming interface
+@c ------------------------------------------------------------------------
+@c device setup/playback/teardown
+
+@defun ao-open-live
+@end defun
 
 
-@cindex Library @value{NAUSICAA_SCHEME_LIB}
-@cindex @value{NAUSICAA_SCHEME_LIB}, library
+@defun ao-open-file
+@end defun
 
 
-The library @value{NAUSICAA_SCHEME_LIB} implements an interface to
-@value{FOREIGN_SCHEME_LIB} on top of the @library{nausicaa} language.
-
-@menu
-* nau intro::                   Introduction to the Nausicaa @api{}.
-* nau alpha::                   Alpha objects handling.
-@end menu
-
-@c page
-@node nau intro
-@section Introduction to the Nausicaa @api{}
+@defun ao-play
+@end defun
 
 
-The library @value{NAUSICAA_SCHEME_LIB} reexports the following bindings
-from @value{FOREIGN_SCHEME_LIB}:
-
-@example
-vicare-ao-version-interface-current
-vicare-ao-version-interface-revision
-vicare-ao-version-interface-age
-vicare-ao-version
-@end example
-
-@c page
-@node nau alpha
-@section Alpha objects handling
+@defun ao-close
+@end defun
 
 
-@menu
-* nau alpha objects::           Alpha objects.
-* nau alpha methods::           Alpha methods.
-@end menu
+@c ------------------------------------------------------------------------
 
-@c page
-@node nau alpha objects
-@subsection Alpha objects
+@c miscellaneous
 
 
-The following bindings are exported by the library
-@value{NAUSICAA_SCHEME_LIB}.
+@defun ao-is-big-endian
+@end defun
 
-
-@deftp {Label Type} @aclass{ao-alpha}
-@cindex Argument @var{alpha}
-@cindex @var{alpha} argument
-Label type representing objects of type @objtype{ao-alpha}.  When
-instances of this type are used as arguments to functions: this
-documentation identifies them as @var{alpha}.
-
-Instances of this type must be finalised calling the method
-@func{finalise}; whenever an instance of this type is garbage collected:
-@func{finalise} is automatically applied to it and any error ignored.
-@end deftp
-
-
-@defop {Default constructor} @aclass{ao-alpha} constructor
-Build and return a new @class{ao-alpha} object; if an error occurs
-raise an exception.
-@end defop
-
-
-@defop {Maker syntax} @aclass{ao-alpha} @aclass{ao-alpha} ()
-Build and return a new @class{ao-alpha} using the default
-constructor.
-@end defop
-
-
-@defmethod @aclass{ao-alpha} finalise
-Finalise the instance; return unspecified values.  It is fine to call
-this method multiple times for the same instance.
-@end defmethod
-
-
-@deftypemethod @aclass{ao-alpha} @aclass{boolean} alive?
-Return @true{} if @var{obj} is an instance of @class{ao-alpha} and it
-has not been finalised; return @false{} otherwise.
-@end deftypemethod
-
-
-@c ------------------------------------------------------------
-
-@subsubheading Object properties
-
-
-@defmethod @aclass{ao-alpha} putprop @var{key} @var{value}
-Add a new property @var{key} to the property list of the instance;
-@var{key} must be a symbol.  If @var{key} is already set: the old entry
-is mutated to reference the new @var{value}.
-@end defmethod
-
-
-@defmethod @aclass{ao-alpha} getprop @var{key}
-Return the value of the property @var{key} in the property list of the
-instance; if @var{key} is not set: return @false{}.  @var{key} must be a
-symbol.
-@end defmethod
-
-
-@defmethod @aclass{ao-alpha} remprop @var{key}
-Remove the property @var{key} from the property list of the instance; if
-@var{key} is not set: nothing happens.  @var{key} must be a symbol.
-@end defmethod
-
-
-@defmethod @aclass{ao-alpha} property-list
-Return a new association list representing the property list of the
-instance.  The order of the entries is the same as the property creation
-order.
-@end defmethod
-
-@c ------------------------------------------------------------
-
-@subsubheading Virtual fields
-
-
-@deftypecv {Mutable virtual field} @aclass{ao-alpha} @aclass{procedure} destructor
-Retrieve or set a destructor function associated to the instance.
-
-Whenever the instance is finalised, either explicitly with
-@func{finalise} or implicitly by the garbage collector, the custom
-destructor is applied to the instance before the internal state of the
-instance is destroyed.
-@end deftypecv
-
-@c ------------------------------------------------------------
-
-@subsubheading Other operations
-
-
-@defmethod @aclass{ao-alpha} hash
-Return an exact integer to be used as hashtable key for the instance.
-Hashtables having a @class{ao-alpha} as key can be instantiated as
-follows:
-
-@example
-(make-hashtable (lambda ((V <ao-alpha>))
-                  (V hash))
-                eq?)
-@end example
-@end defmethod
-
-@c ------------------------------------------------------------
-
-@subsubheading Arguments validation
-
-
-The following bindings are meant to be used with the facilities of the
-library @library{vicare arguments validation}.
-
-
-@deffn {Validation Clause} @aclass{ao-alpha} @var{obj}
-Succeed if @var{obj} is an instance of @class{ao-alpha}.
-@end deffn
-
-
-@deffn {Validation Clause} @aclass{ao-alpha}/alive @var{obj}
-Succeed if @var{obj} is an instance of @class{ao-alpha} and the
-method @func{alive?} would return @true{} if applied to it.
-@end deffn
-
-@c page
-@node nau alpha methods
-@subsection Alpha methods
-
-
-The following bindings are exported by the library
-@value{NAUSICAA_SCHEME_LIB}.
-
-
-@c @defmethod @aclass{ao-alpha} name
-@c Return a Scheme string representing the name of the given instance.
-@c @end defmethod
 
 @c page
 @c ------------------------------------------------------------

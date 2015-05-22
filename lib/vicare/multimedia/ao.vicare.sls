@@ -36,41 +36,47 @@
     vicare-ao-version-interface-age
     vicare-ao-version
 
-    ;; ao alpha struct
-    ao-alpha-initialise
-    ao-alpha-finalise
-    ao-alpha?
-    ao-alpha?/alive		$ao-alpha-alive?
-    ao-alpha-custom-destructor	set-ao-alpha-custom-destructor!
-    ao-alpha-putprop		ao-alpha-getprop
-    ao-alpha-remprop		ao-alpha-property-list
-    ao-alpha-hash
+    ;; initialisation and shutdown
+    ao-initialize
+    (rename (ao-initialize ao-initialise))
+    ao-shutdown
 
-    ao-alpha.vicare-arguments-validation
-    ao-alpha/alive.vicare-arguments-validation
-    false-or-ao-alpha.vicare-arguments-validation
-    false-or-ao-alpha/alive.vicare-arguments-validation
+    ;; device options
+    ao-option			ao-option?
+    ao-option?/alive		$ao-option-alive?
+    ao-option-custom-destructor	set-ao-option-custom-destructor!
+    ao-option-putprop		ao-option-getprop
+    ao-option-remprop		ao-option-property-list
+    ao-option-hash
 
-;;; --------------------------------------------------------------------
-;;; still to be implemented
+    ao-append-option		ao-free-options
+    ao-option->alist
+    ao-append-global-option
 
-    )
+    ;; device setup/playback/teardown
+    ao-open-live
+    ao-open-file
+    ao-play
+    ao-close
+
+    ;; driver information
+    ao-driver-id
+    ao-default-driver-id
+    ao-driver-info
+    ao-driver-info-list
+    ao-file-extension
+
+    ;; miscellaneous
+    ao-is-big-endian)
   (import (vicare)
     (vicare multimedia ao constants)
     (prefix (vicare multimedia ao unsafe-capi) capi.)
-    #;(prefix (vicare ffi) ffi.)
+    (prefix (vicare ffi) ffi.)
     (prefix (vicare ffi foreign-pointer-wrapper) ffi.)
     (vicare arguments validation)
-    #;(vicare arguments general-c-buffers)
+    (vicare arguments general-c-buffers)
     #;(vicare language-extensions syntaxes)
     #;(prefix (vicare platform words) words.))
-
-
-;;;; arguments validation
-
-#;(define-argument-validation (fixnum who obj)
-  (fixnum? obj)
-  (assertion-violation who "expected fixnum as argument" obj))
 
 
 ;;;; version functions
@@ -88,47 +94,103 @@
   (ascii->string (capi.vicare-ao-version)))
 
 
-;;;; data structures: alpha
+;;;; initialisation and shutdown
 
-(ffi.define-foreign-pointer-wrapper ao-alpha
-  (ffi.foreign-destructor capi.ao-alpha-finalise)
-  #;(ffi.foreign-destructor #f)
-  (ffi.collector-struct-type #f)
-  (ffi.collected-struct-type ao-beta))
+(define* (ao-initialize)
+  (capi.ao-initialize))
 
-(module ()
-  (set-rtd-printer! (type-descriptor ao-alpha)
-    (lambda (S port sub-printer)
-      (define-inline (%display thing)
-	(display thing port))
-      (define-inline (%write thing)
-	(write thing port))
-      (%display "#[ao-alpha")
-      (%display " pointer=")	(%display ($ao-alpha-pointer  S))
-      (%display "]"))))
-
-;;; --------------------------------------------------------------------
-
-(define (ao-alpha-initialise)
-  (define who 'ao-alpha-initialise)
-  (cond ((capi.ao-alpha-initialise)
-	 => (lambda (rv)
-	      (make-ao-alpha/owner rv)))
-	(else
-	 (error who "unable to create alpha object"))))
-
-(define (ao-alpha-finalise alpha)
-  (define who 'ao-alpha-finalise)
-  (with-arguments-validation (who)
-      ((ao-alpha		alpha))
-    ($ao-alpha-finalise alpha)))
+(define* (ao-shutdown)
+  (capi.ao-shutdown))
 
 
-;;;; data structures: beta
+;;;; device options
 
-(ffi.define-foreign-pointer-wrapper ao-beta
-  (ffi.foreign-destructor #f)
-  (ffi.collector-struct-type ao-alpha))
+(ffi.define-foreign-pointer-wrapper ao-option
+  (ffi.foreign-destructor capi.ao-free-options)
+  (ffi.collector-struct-type #f))
+
+(module ()
+  (set-rtd-printer! (type-descriptor ao-option)
+    (lambda (S port sub-printer)
+      (define-syntax-rule (%display thing)
+	(display thing port))
+      (define-syntax-rule (%write thing)
+	(write thing port))
+      (%display "#[ao-option")
+      (%display " pointer=")	(%display ($ao-option-pointer S))
+      (%display "]"))))
+
+(define* (ao-free-options {opt ao-option?})
+  ($ao-option-finalise opt))
+
+(define* (ao-append-option {opt (or not ao-option?/alive)} {key general-c-string?} {val general-c-string?})
+  ;;When OPT is false: allocate a new  linked list of "ao_option" C structs and store
+  ;;it in a newly allocated "ao-struct" Scheme struct; return the Scheme struct.
+  ;;
+  ;;When OPT  is a live "ao-option"  Scheme struct: append  a new node to  the linked
+  ;;list of "ao_option" C structs and return OPT itself.
+  ;;
+  (with-general-c-strings
+      ((key^ key)
+       (val^ val))
+    (cond ((capi.ao-append-option opt key^ val^)
+	   => (lambda (rv)
+		;;RV is a pointer object referencing the linked list of "ao_option" C
+		;;structs.
+		(or opt (make-ao-option/owner rv))))
+	  (else
+	   (error __who__ "unable to create alpha object")))))
+
+(define* (ao-option->alist {opt ao-option?/alive})
+  (map (lambda (entry)
+	 (cons (ascii->string (car entry))
+	       (ascii->string (cdr entry))))
+    (capi.ao-option->alist opt)))
+
+(define* (ao-append-global-option {key general-c-string?} {val general-c-string?})
+  (with-general-c-strings
+      ((key^ key)
+       (val^ val))
+    (capi.ao-append-global-option key^ val^)))
+
+
+;;;; devicae playback and teardown
+
+(define* (ao-open-live ctx)
+  (capi.ao-open-live))
+
+(define* (ao-open-file ctx)
+  (capi.ao-open-file))
+
+(define* (ao-play ctx)
+  (capi.ao-play))
+
+(define* (ao-close ctx)
+  (capi.ao-close))
+
+
+;;;; driver information
+
+(define* (ao-driver-id ctx)
+  (capi.ao-driver-id))
+
+(define* (ao-default-driver-id ctx)
+  (capi.ao-default-driver-id))
+
+(define* (ao-driver-info ctx)
+  (capi.ao-driver-info))
+
+(define* (ao-driver-info-list ctx)
+  (capi.ao-driver-info-list))
+
+(define* (ao-file-extension ctx)
+  (capi.ao-file-extension))
+
+
+;;;; miscellaneous
+
+(define* (ao-is-big-endian ctx)
+  (capi.ao-is-big-endian))
 
 
 ;;;; done

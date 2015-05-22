@@ -35,14 +35,31 @@
     vicare-ao-version-interface-age
     vicare-ao-version
 
-    ;; ao alpha
-    ao-alpha-initialise
-    ao-alpha-finalise
+    ;; initialisation and shutdown unsafe C API
+    ao-initialize
+    ao-shutdown
 
-;;; --------------------------------------------------------------------
-;;; still to be implemented
+    ;; device options
+    ao-append-global-option
+    ao-append-option
+    ao-free-options
+    ao-option->alist
 
-    )
+    ;; device setup/playback/teardown unsafe C API
+    ao-open-live
+    ao-open-file
+    ao-play
+    ao-close
+
+    ;; driver information unsafe C API
+    ao-driver-id
+    ao-default-driver-id
+    ao-driver-info
+    ao-driver-info-list
+    ao-file-extension
+
+    ;; miscellaneous unsafe C API
+    ao-is-big-endian)
   (import (vicare))
 
 
@@ -61,13 +78,69 @@
   (foreign-call "ikrt_ao_version"))
 
 
-;;;; ao alpha struct
+;;;; initialisation and shutdown unsafe C API
 
-(define-syntax-rule (ao-alpha-initialise)
-  (foreign-call "ikrt_ao_alpha_initialise"))
+(define-syntax-rule (ao-initialize)
+  (foreign-call "ikrt_ao_initialize"))
 
-(define-syntax-rule (ao-alpha-finalise alpha)
-  (foreign-call "ikrt_ao_alpha_finalise" alpha))
+(define-syntax-rule (ao-shutdown)
+  (foreign-call "ikrt_ao_shutdown"))
+
+
+;;;; device options unsafe C API
+
+(define-syntax-rule (ao-append-global-option key val)
+  (foreign-call "ikrt_ao_append_global_option" key val))
+
+;;; --------------------------------------------------------------------
+
+(define-syntax-rule (ao-append-option false/opt-pointer key val)
+  (foreign-call "ikrt_ao_append_option" false/opt-pointer key val))
+
+(define-syntax-rule (ao-free-options opt-pointer)
+  (foreign-call "ikrt_ao_free_options" opt-pointer))
+
+(define-syntax-rule (ao-option->alist opt-pointer)
+  (foreign-call "ikrt_ao_option_keys_and_vals" opt-pointer))
+
+
+;;;; device playback and teardown  unsafe C API
+
+(define-syntax-rule (ao-open-live)
+  (foreign-call "ikrt_ao_open_live"))
+
+(define-syntax-rule (ao-open-file)
+  (foreign-call "ikrt_ao_open_file"))
+
+(define-syntax-rule (ao-play)
+  (foreign-call "ikrt_ao_play"))
+
+(define-syntax-rule (ao-close)
+  (foreign-call "ikrt_ao_close"))
+
+
+;;;; driver information unsafe C API
+
+(define-syntax-rule (ao-driver-id)
+  (foreign-call "ikrt_ao_driver_id"))
+
+(define-syntax-rule (ao-default-driver-id)
+  (foreign-call "ikrt_ao_default_driver_id"))
+
+(define-syntax-rule (ao-driver-info)
+  (foreign-call "ikrt_ao_driver_info"))
+
+(define-syntax-rule (ao-driver-info-list)
+  (foreign-call "ikrt_ao_driver_info_list"))
+
+(define-syntax-rule (ao-file-extension)
+  (foreign-call "ikrt_ao_file_extension"))
+
+
+;;;; miscellaneous unsafe C API
+
+(define-syntax-rule (ao-is-big-endian)
+  (foreign-call "ikrt_ao_is_big_endian"))
 
 
 ;;;; still to be implemented

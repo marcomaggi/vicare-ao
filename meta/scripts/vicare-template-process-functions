@@ -164,7 +164,7 @@
       (let* ((fun		(car fun-list))
 	     (ikrt-name		(<fun>-ikrt-name   fun))
 	     (scheme-name	(<fun>-scheme-name fun)))
-	(printf "(define-inline (~a)\n  (foreign-call \"~a\"))\n\n"
+	(printf "(define-syntax-rule (~a)\n  (foreign-call \"~a\"))\n\n"
 		scheme-name ikrt-name))
       (loop (cdr fun-list)))))
 
@@ -230,16 +230,13 @@
     (unless (null? fun-list)
       (let* ((fun		(car fun-list))
 	     (scheme-name	(<fun>-scheme-name fun)))
-	(printf SCHEME-WRAPPER-TEMPLATE scheme-name scheme-name scheme-name))
+	(printf SCHEME-WRAPPER-TEMPLATE scheme-name scheme-name))
       (loop (cdr fun-list)))))
 
 (define-constant SCHEME-WRAPPER-TEMPLATE
   "\
-(define (~a ctx)
-  (define who '~a)
-  (with-arguments-validation (who)
-      ()
-    (capi.~a)))\n\n")
+(define* (~a ctx)
+  (capi.~a))\n\n")
 
 
 ;;;; cond-expand clauses

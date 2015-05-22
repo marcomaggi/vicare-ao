@@ -42,11 +42,11 @@
  ** Handling of Scheme objects.
  ** ----------------------------------------------------------------- */
 
-/* Accessors for the fields of the Scheme structure "ao_alpha". */
-#define IK_AO_ALPHA_POINTER(ALPHA)	IK_FIELD((ALPHA),0)
-#define IK_AO_ALPHA_OWNER(ALPHA)		IK_FIELD((ALPHA),1)
-#define IK_AO_ALPHA(ALPHA)	\
-  IK_POINTER_DATA_VOIDP(IK_AO_ALPHA_POINTER(ALPHA))
+/* Accessors for the fields of the Scheme structure "ao-option". */
+#define IK_AO_OPTION_POINTER(OPTION)	IK_FIELD((OPTION),0)
+#define IK_AO_OPTION_OWNER(OPTION)	IK_FIELD((OPTION),1)
+#define IK_AO_OPTION(OPTION)	\
+  IK_POINTER_DATA_VOIDP(IK_AO_OPTION_POINTER(OPTION))
 
 
 /** --------------------------------------------------------------------
