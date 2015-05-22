@@ -75,8 +75,7 @@
     (prefix (vicare ffi foreign-pointer-wrapper) ffi.)
     (vicare arguments validation)
     (vicare arguments general-c-buffers)
-    #;(vicare language-extensions syntaxes)
-    #;(prefix (vicare platform words) words.))
+    (prefix (vicare platform words) words.))
 
 
 ;;;; version functions
@@ -171,20 +170,27 @@
 
 ;;;; driver information
 
-(define* (ao-driver-id ctx)
-  (capi.ao-driver-id))
+(define* (ao-driver-id {short-name general-c-string?})
+  (with-general-c-strings
+      ((short-name^	short-name))
+    (let ((rv (capi.ao-driver-id short-name^)))
+      (if (positive? rv)
+	  rv
+	#f))))
 
-(define* (ao-default-driver-id ctx)
+(define* (ao-default-driver-id)
   (capi.ao-default-driver-id))
 
-(define* (ao-driver-info ctx)
-  (capi.ao-driver-info))
+(define* (ao-driver-info id)
+  (capi.ao-driver-info id))
 
 (define* (ao-driver-info-list ctx)
   (capi.ao-driver-info-list))
 
-(define* (ao-file-extension ctx)
-  (capi.ao-file-extension))
+(define* (ao-file-extension {id (and words.signed-int? positive?)})
+  (cond ((capi.ao-file-extension id)
+	 => ascii->string)
+	(else #f)))
 
 
 ;;;; miscellaneous

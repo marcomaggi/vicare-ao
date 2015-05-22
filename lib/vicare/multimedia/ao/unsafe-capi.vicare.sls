@@ -121,20 +121,20 @@
 
 ;;;; driver information unsafe C API
 
-(define-syntax-rule (ao-driver-id)
-  (foreign-call "ikrt_ao_driver_id"))
+(define-syntax-rule (ao-driver-id short-name)
+  (foreign-call "ikrt_ao_driver_id" short-name))
 
 (define-syntax-rule (ao-default-driver-id)
   (foreign-call "ikrt_ao_default_driver_id"))
 
-(define-syntax-rule (ao-driver-info)
+(define-syntax-rule (ao-driver-info id)
   (foreign-call "ikrt_ao_driver_info"))
 
 (define-syntax-rule (ao-driver-info-list)
   (foreign-call "ikrt_ao_driver_info_list"))
 
-(define-syntax-rule (ao-file-extension)
-  (foreign-call "ikrt_ao_file_extension"))
+(define-syntax-rule (ao-file-extension id)
+  (foreign-call "ikrt_ao_file_extension" id))
 
 
 ;;;; miscellaneous unsafe C API

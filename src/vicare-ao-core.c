@@ -254,11 +254,13 @@ ikrt_ao_close (ikpcb * pcb)
  ** ----------------------------------------------------------------- */
 
 ikptr
-ikrt_ao_driver_id (ikpcb * pcb)
+ikrt_ao_driver_id (ikptr s_short_name, ikpcb * pcb)
 {
 #ifdef HAVE_AO_DRIVER_ID
-  /* rv = ao_driver_id(); */
-  return IK_VOID;
+  const char *	short_name = IK_GENERALISED_C_STRING(s_short_name);
+  int		rv;
+  rv = ao_driver_id(short_name);
+  return IK_FIX(rv);
 #else
   feature_failure(__func__);
 #endif
@@ -267,8 +269,9 @@ ikptr
 ikrt_ao_default_driver_id (ikpcb * pcb)
 {
 #ifdef HAVE_AO_DEFAULT_DRIVER_ID
-  /* rv = ao_default_driver_id(); */
-  return IK_VOID;
+  int	rv;
+  rv = ao_default_driver_id();
+  return IK_FIX(rv);
 #else
   feature_failure(__func__);
 #endif
@@ -294,11 +297,13 @@ ikrt_ao_driver_info_list (ikpcb * pcb)
 #endif
 }
 ikptr
-ikrt_ao_file_extension (ikpcb * pcb)
+ikrt_ao_file_extension (ikptr s_id, ikpcb * pcb)
 {
 #ifdef HAVE_AO_FILE_EXTENSION
-  /* rv = ao_file_extension(); */
-  return IK_VOID;
+  int		id = ik_integer_to_int(s_id);
+  const char*	rv;
+  rv = ao_file_extension(id);
+  return (rv)? ika_bytevector_from_cstring(pcb, rv) : IK_FALSE;
 #else
   feature_failure(__func__);
 #endif

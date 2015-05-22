@@ -510,11 +510,38 @@ The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@defun ao-driver-id
+@defun ao-driver-id @var{short-name}
+Given the short name of a supported driver: return its numeric
+identifier.  If successful: return a positive exact integer; otherwise
+return @false{}.
+
+The argument @var{short-name} be a generalised C string with @ascii{}
+representation (@libsref{cbuffers strings, Introduction to generalised C
+strings}).
+
+@lisp
+(import (vicare)
+  (prefix (vicare multimedia ao) ao.))
+
+(ao.ao-driver-id "alsa")
+@result{} 1
+
+(ao.ao-driver-id "oss")
+@result{} 2
+@end lisp
 @end defun
 
 
 @defun ao-default-driver-id
+Return the numeric identifier of the default driver.
+
+@lisp
+(import (vicare)
+  (prefix (vicare multimedia ao) ao.))
+
+(ao.ao-default-driver-id)
+@result{} 1
+@end lisp
 @end defun
 
 
@@ -526,7 +553,14 @@ The following bindings are exported by the library
 @end defun
 
 
-@defun ao-file-extension
+@defun ao-file-extension @var{id}
+Given the numeric identifier of a driver return its associated file
+extension as Scheme string.
+
+@quotation
+@strong{NOTE} In @libao{} version 1.2.0 this function appears to be not
+available.
+@end quotation
 @end defun
 
 @c page

@@ -29,6 +29,8 @@
 (import (vicare)
   (prefix (vicare multimedia ao) ao.)
   (prefix (vicare multimedia ao constants) ao.)
+  (prefix (vicare multimedia ao cond-expand) ao.)
+  (vicare language-extensions cond-expand)
   (vicare arguments validation)
   (vicare checks))
 
@@ -40,6 +42,9 @@
 ;; These do nothing.
 (ao.ao-initialise)
 (ao.ao-initialise)
+
+(define-cond-expand ao-cond-expand
+  ao.vicare-ao-features)
 
 
 ;;;; helpers
@@ -69,8 +74,6 @@
 
 (parametrise ((check-test-name		'struct-option)
 	      (struct-guardian-logger	#t))
-
-  (define who 'test)
 
   (check	;this will be garbage collected
       (let ((opt (ao.ao-append-option #f "client_name" "vicare-ao")))
@@ -180,6 +183,36 @@
 	 ("delta" . "gamma")))
 
   (collect))
+
+
+(parametrise ((check-test-name		'driver-info))
+
+  (check-for-false
+   (ao.ao-driver-id "ciao"))
+
+  (check-for-true
+   (positive-fixnum? (ao.ao-driver-id "alsa")))
+
+  (check-for-true
+   (positive-fixnum? (ao.ao-driver-id "oss")))
+
+;;; --------------------------------------------------------------------
+
+  (check-for-true
+   (positive-fixnum? (ao.ao-default-driver-id)))
+
+;;; --------------------------------------------------------------------
+
+  (ao-cond-expand
+   (ao.ao-file-extension
+    (check
+	(ao.ao-file-extension (ao.ao-driver-id "alsa"))
+      => "wav"))
+   (else
+    (fprintf (current-error-port)
+	     "~a: skipping test for ~a\n" (vicare-argv0-string) 'ao-file-extension)))
+
+  #t)
 
 
 ;;;; done
