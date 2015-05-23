@@ -250,6 +250,7 @@ for @value{FOREIGN_PACKAGE}.
 * plain init::                  Library initialisation and finalisation.
 * plain option::                Device option objects.
 * plain info::                  Device driver informations.
+* plain playback::              Playing sounds.
 * plain misc::                  Miscellaneous operations.
 @end menu
 
@@ -620,16 +621,13 @@ available.
 @end defun
 
 @c page
-@node plain misc
-@section Miscellaneous operations
+@node plain playback
+@section Playing sounds
 
 
 The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
-
-@c ------------------------------------------------------------------------
-@c device setup/playback/teardown
 
 @defun ao-open-live
 @end defun
@@ -646,15 +644,19 @@ The following bindings are exported by the library
 @defun ao-close
 @end defun
 
+@c page
+@node plain misc
+@section Miscellaneous operations
 
-@c ------------------------------------------------------------------------
 
-@c miscellaneous
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
 
 
 @defun ao-is-big-endian
+Return a boolean: true if the host is big endian; false if the host is
+little endian.
 @end defun
-
 
 @c page
 @c ------------------------------------------------------------

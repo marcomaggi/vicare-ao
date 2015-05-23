@@ -255,7 +255,7 @@
 
 ;;;; miscellaneous
 
-(define* (ao-is-big-endian ctx)
+(define (ao-is-big-endian)
   (capi.ao-is-big-endian))
 
 

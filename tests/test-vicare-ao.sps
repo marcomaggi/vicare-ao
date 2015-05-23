@@ -239,10 +239,23 @@
   #t)
 
 
+(parametrise ((check-test-name		'misc))
+
+  (when #t
+    (fprintf (current-error-port)
+	     "big endian? ~a" (ao.ao-is-big-endian)))
+
+  (check-for-true
+   (boolean? (ao.ao-is-big-endian)))
+
+  #t)
+
+
 ;;;; done
 
 (ao.ao-shutdown)
 
+(collect 4)
 (check-report)
 
 ;;; end of file

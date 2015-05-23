@@ -350,7 +350,7 @@ ikrt_ao_driver_info_list (ikptr s_ao_info_std, ikpcb * pcb)
   int		info_count;
   ao_info **	infos = ao_driver_info_list(&info_count);
   if (0 < info_count) {
-    ikptr	s_list, s_spine, s_pair;
+    ikptr	s_list, s_spine;
     s_list = s_spine = ika_pair_alloc(pcb);
     pcb->root0 = &s_list;
     pcb->root1 = &s_spine;
@@ -399,8 +399,7 @@ ikptr
 ikrt_ao_is_big_endian (ikpcb * pcb)
 {
 #ifdef HAVE_AO_IS_BIG_ENDIAN
-  /* rv = ao_is_big_endian(); */
-  return IK_VOID;
+  return IK_BOOLEAN_FROM_INT(ao_is_big_endian());
 #else
   feature_failure(__func__);
 #endif
