@@ -127,11 +127,11 @@
 (define-syntax-rule (ao-default-driver-id)
   (foreign-call "ikrt_ao_default_driver_id"))
 
-(define-syntax-rule (ao-driver-info id)
-  (foreign-call "ikrt_ao_driver_info"))
+(define-syntax-rule (ao-driver-info id ao-info-std)
+  (foreign-call "ikrt_ao_driver_info" id ao-info-std))
 
-(define-syntax-rule (ao-driver-info-list)
-  (foreign-call "ikrt_ao_driver_info_list"))
+(define-syntax-rule (ao-driver-info-list ao-info-std)
+  (foreign-call "ikrt_ao_driver_info_list" ao-info-std))
 
 (define-syntax-rule (ao-file-extension id)
   (foreign-call "ikrt_ao_file_extension" id))

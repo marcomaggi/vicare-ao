@@ -53,6 +53,15 @@
     ao-option->alist
     ao-append-global-option
 
+    ao-info			ao-info?
+    ao-info-type
+    ao-info-name
+    ao-info-short-name
+    ao-info-comment
+    ao-info-preferred-byte-format
+    ao-info-priority
+    ao-info-options
+
     ;; device setup/playback/teardown
     ao-open-live
     ao-open-file
@@ -170,6 +179,46 @@
 
 ;;;; driver information
 
+(define-struct ao-info
+  (type
+		;One of the exact integers: AO_TYPE_LIVE, AO_TYPE_FILE.
+   name
+		;A Scheme string representing the full name of the driver.
+   short-name
+		;A Scheme string representing the short name of the driver.
+   comment
+		;A Scheme string representing the driver description.
+   preferred-byte-format
+		;An exact  integer specifying  the preferred  ordering of  the sample
+		;bytes.  Using  the driver with  this byte format usually  results in
+		;slightly less  memory usage  and slightly less  CPU usage  because a
+		;swap buffer will not be needed.
+   priority
+		;A positive exact integer ranking how likely it is for this driver to
+		;be the  default.  The  default driver will  be a  functioning driver
+		;with highest priority.
+   options
+		;A list of  strings representing the list of option  keys accepted by
+		;this driver.
+   ))
+
+(module ()
+  (set-rtd-printer! (type-descriptor ao-info)
+    (lambda (S port sub-printer)
+      (define-syntax-rule (%display thing)
+	(display thing port))
+      (define-syntax-rule (%write thing)
+	(write thing port))
+      (%display "#[ao-info")
+      (%display " type=")		(%display (if (= (ao-info-type S) AO_TYPE_LIVE) 'AO_TYPE_LIVE 'AO_TYPE_FILE))
+      (%display " name=")		(%write (ao-info-name S))
+      (%display " short-name=")		(%write (ao-info-short-name S))
+      (%display " comment=")		(%write (ao-info-comment S))
+      (%display " preferred-byte-format=") (%display (ao-info-preferred-byte-format S))
+      (%display " priority=")		(%display (ao-info-priority S))
+      (%display " options=")		(%write (ao-info-options S))
+      (%display "]"))))
+
 (define* (ao-driver-id {short-name general-c-string?})
   (with-general-c-strings
       ((short-name^	short-name))
@@ -182,10 +231,21 @@
   (capi.ao-default-driver-id))
 
 (define* (ao-driver-info id)
-  (capi.ao-driver-info id))
+  (receive-and-return (rv)
+      (capi.ao-driver-info id (struct-type-descriptor ao-info))
+    (when rv
+      (%normalise-ao-info! rv))))
 
-(define* (ao-driver-info-list ctx)
-  (capi.ao-driver-info-list))
+(define* (ao-driver-info-list)
+  (receive-and-return (L)
+      (capi.ao-driver-info-list (struct-type-descriptor ao-info))
+    (for-each %normalise-ao-info! L)))
+
+(define (%normalise-ao-info! info)
+  (set-ao-info-name!       info (ascii->string     (ao-info-name       info)))
+  (set-ao-info-short-name! info (ascii->string     (ao-info-short-name info)))
+  (set-ao-info-comment!    info (ascii->string     (ao-info-comment    info)))
+  (set-ao-info-options!    info (map ascii->string (ao-info-options    info))))
 
 (define* (ao-file-extension {id (and words.signed-int? positive?)})
   (cond ((capi.ao-file-extension id)

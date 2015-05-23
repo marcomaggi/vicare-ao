@@ -253,6 +253,57 @@ ikrt_ao_close (ikpcb * pcb)
  ** driver information C wrappers.
  ** ----------------------------------------------------------------- */
 
+static ikptr
+ao_info_to_scheme_struct (ikpcb * pcb, ao_info * info, ikptr s_ao_info_std)
+/* Build  and  return a  new  Scheme  struct  object of  type  "ao-info"
+   representing  the C  language  struct "ao_info"  referenced by  INFO.
+   S_AO_INFO_STD is the struct type descriptor. */
+{
+  ikptr		s_stru = ika_struct_alloc_and_init(pcb, s_ao_info_std);
+  pcb->root9 = &s_stru;
+  {
+    ik_signal_dirt_in_page_of_pointer(pcb, s_stru);
+    /* Field "type". */
+    IK_ASS(IK_FIELD(s_stru, 0), ika_integer_from_int(pcb, info->type));
+    /* Field "name". */
+    IK_ASS(IK_FIELD(s_stru, 1), ika_bytevector_from_cstring(pcb, info->name));
+    /* Field "short-name". */
+    IK_ASS(IK_FIELD(s_stru, 2), ika_bytevector_from_cstring(pcb, info->short_name));
+    /* Field "comment". */
+    IK_ASS(IK_FIELD(s_stru, 3), ika_bytevector_from_cstring(pcb, info->comment));
+    /* Field "preferred-byte-format". */
+    IK_ASS(IK_FIELD(s_stru, 4), ika_integer_from_int(pcb, info->preferred_byte_format));
+    /* Field "priority". */
+    IK_ASS(IK_FIELD(s_stru, 5), ika_integer_from_int(pcb, info->priority));
+    /* Field "options". */
+    if (0 < info->option_count) {
+      ikptr	s_spine = ika_pair_alloc(pcb);
+      IK_FIELD(s_stru, 6) = s_spine;
+      pcb->root8 = &s_spine;
+      {
+	for (int i=0; i<info->option_count;) {
+	  ik_signal_dirt_in_page_of_pointer(pcb, s_spine);
+	  IK_ASS(IK_CAR(s_spine), ika_bytevector_from_cstring(pcb, info->options[i]));
+	  ++i;
+	  if (i < info->option_count) {
+	    IK_ASS(IK_CDR(s_spine), ika_pair_alloc(pcb));
+	    s_spine = IK_CDR(s_spine);
+	  } else {
+	    IK_CDR(s_spine) = IK_NULL;
+	  }
+	}
+      }
+      pcb->root8 = NULL;
+    } else {
+      IK_FIELD(s_stru, 6) = IK_NULL;
+    }
+  }
+  pcb->root9 = NULL;
+  return s_stru;
+}
+
+/* ------------------------------------------------------------------ */
+
 ikptr
 ikrt_ao_driver_id (ikptr s_short_name, ikpcb * pcb)
 {
@@ -277,21 +328,51 @@ ikrt_ao_default_driver_id (ikpcb * pcb)
 #endif
 }
 ikptr
-ikrt_ao_driver_info (ikpcb * pcb)
+ikrt_ao_driver_info (ikptr s_id, ikptr s_ao_info_std, ikpcb * pcb)
 {
 #ifdef HAVE_AO_DRIVER_INFO
-  /* rv = ao_driver_info(); */
-  return IK_VOID;
+  int		id = ik_integer_to_int(s_id);
+  ao_info *	rv;
+  rv = ao_driver_info(id);
+  if (rv) {
+    return ao_info_to_scheme_struct(pcb, rv, s_ao_info_std);
+  } else {
+    return IK_FALSE;
+  }
 #else
   feature_failure(__func__);
 #endif
 }
 ikptr
-ikrt_ao_driver_info_list (ikpcb * pcb)
+ikrt_ao_driver_info_list (ikptr s_ao_info_std, ikpcb * pcb)
 {
 #ifdef HAVE_AO_DRIVER_INFO_LIST
-  /* rv = ao_driver_info_list(); */
-  return IK_VOID;
+  int		info_count;
+  ao_info **	infos = ao_driver_info_list(&info_count);
+  if (0 < info_count) {
+    ikptr	s_list, s_spine, s_pair;
+    s_list = s_spine = ika_pair_alloc(pcb);
+    pcb->root0 = &s_list;
+    pcb->root1 = &s_spine;
+    {
+      for (int i=0; i<info_count;) {
+	ik_signal_dirt_in_page_of_pointer(pcb, s_spine);
+	IK_CAR(s_spine) = ao_info_to_scheme_struct(pcb, infos[i], s_ao_info_std);
+	++i;
+	if (i < info_count) {
+	  IK_ASS(IK_CDR(s_spine), ika_pair_alloc(pcb));
+	  s_spine = IK_CDR(s_spine);
+	} else {
+	  IK_CDR(s_spine) = IK_NULL;
+	}
+      }
+    }
+    pcb->root1 = NULL;
+    pcb->root0 = NULL;
+    return s_list;
+  } else {
+    return IK_NULL;
+  }
 #else
   feature_failure(__func__);
 #endif

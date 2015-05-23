@@ -545,11 +545,67 @@ Return the numeric identifier of the default driver.
 @end defun
 
 
-@defun ao-driver-info
+@deftp {Struct Type} ao-info
+Scheme representation of the C language struct @code{ao_info}.  It has
+the following fields:
+
+@table @code
+@item type
+One of the exact integers: AO_TYPE_LIVE, AO_TYPE_FILE.
+
+@item name
+A Scheme string representing the full name of the driver.
+
+@item short-name
+A Scheme string representing the short name of the driver.
+
+@item comment
+A Scheme string representing the driver description.
+
+@item preferred-byte-format
+An exact integer specifying the preferred ordering of the sample bytes.
+Using the driver with this byte format usually results in slightly less
+memory usage and slightly less CPU usage because a swap buffer will not
+be needed.
+
+@item priority
+A positive exact integer ranking how likely it is for this driver to be
+the default.  The default driver will be a functioning driver with
+highest priority.
+
+@item options
+A list of strings representing the list of option keys accepted by this
+driver.
+@end table
+@end deftp
+
+
+@defun ao-info? @var{obj}
+Return @true{} if @var{obj} is a struct of type @objtype{ao-info};
+return @false{} otherwise.
+@end defun
+
+
+@defun ao-info-type @var{info}
+@defunx ao-info-name @var{info}
+@defunx ao-info-short-name @var{info}
+@defunx ao-info-comment @var{info}
+@defunx ao-info-preferred-byte-format @var{info}
+@defunx ao-info-priority @var{info}
+Accessors for the fields of @objtype{ao-info} structs.
+@end defun
+
+
+@defun ao-driver-info @var{id}
+Given the numeric identifier of a driver: build and return a struct of
+type @objtype{ao-info} describing the driver.  If @var{id} is invalid:
+return @false{}.
 @end defun
 
 
 @defun ao-driver-info-list
+Return a list of @objtype{ao-info} structs describing the available
+drivers.
 @end defun
 
 

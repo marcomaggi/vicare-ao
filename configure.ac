@@ -14,6 +14,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects dist-xz no-dist-gzip])
 AM_MAINTAINER_MODE
 
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_INSTALL
@@ -25,7 +26,7 @@ LT_INIT([shared disable-static])
 
 VICARE_SCHEME
 VICARE_CHECK_LIBRARY([VICARE],
-  [(vicare (0 4 (>= 2015) (>= 5) (>= 19)))])
+  [(vicare (0 4 (>= 2015) (>= 5) (>= 23)))])
 AS_IF([test "$vicare_cv_schemelib_VICARE" = no],
   [AC_MSG_ERROR([wrong Vicare version],1)])
 

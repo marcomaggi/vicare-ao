@@ -203,6 +203,30 @@
 
 ;;; --------------------------------------------------------------------
 
+  (check
+      (let ((I (ao.ao-driver-info (ao.ao-driver-id "alsa"))))
+	(fprintf (current-error-port) "ao-info: ~a\n" I)
+	(ao.ao-info? I))
+    => #t)
+
+  (check
+      (let ((I (ao.ao-driver-info (ao.ao-driver-id "oss"))))
+	(fprintf (current-error-port) "ao-info: ~a\n" I)
+	(ao.ao-info? I))
+    => #t)
+
+  (check-for-false
+   (ao.ao-driver-info 12345))
+
+;;; --------------------------------------------------------------------
+
+  (check-for-true
+   (let ((L (ao.ao-driver-info-list)))
+     (pretty-print L (current-error-port))
+     (for-all ao.ao-info? L)))
+
+;;; --------------------------------------------------------------------
+
   (ao-cond-expand
    (ao.ao-file-extension
     (check
