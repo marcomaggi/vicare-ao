@@ -249,9 +249,11 @@ for @value{FOREIGN_PACKAGE}.
 * plain version::               @value{PACKAGE} version informations.
 * plain init::                  Library initialisation and finalisation.
 * plain option::                Device option objects.
-* plain info::                  Device driver informations.
+* plain device::                Audio device objects.
+* plain samples::               Describing audio samples.
 * plain playback::              Playing sounds.
 * plain misc::                  Miscellaneous operations.
+* plain examples::              Usage examples.
 @end menu
 
 @c page
@@ -334,14 +336,13 @@ The following bindings are exported by the library
 @cindex Argument @var{option}
 @cindex @var{option} argument
 Opaque structure type referencing an instance of the C language type
-@code{ao_option}.  When instances of this type are used as
-arguments to functions: this documentation identifies them as
-@var{option}.
+@code{ao_option}.  When instances of this type are used as arguments to
+functions: this documentation identifies them as @var{option}.
 
-Instances of this type must be finalised with
-@func{ao-option-finalise}; whenever an instance of this type is
-garbage collected: @func{ao-option-finalise} is automatically
-applied to it and any error ignored.
+Instances of this type must be finalised with @func{ao-free-options};
+whenever an instance of this type is garbage collected:
+@func{ao-free-options} is automatically applied to it and any error
+ignored.
 
 In certain contexts, instances of this type own the referenced
 @code{ao_option} value, in other contexts they do not:
@@ -414,7 +415,7 @@ creation order.
 Retrieve or set a destructor function associated to @var{option}.
 
 Whenever @var{option} is finalised, either explicitly with
-@func{ao-option-finalise} or implicitly by the garbage collector,
+@func{ao-free-options} or implicitly by the garbage collector,
 @var{func} is applied to @var{option} before the internal state of
 @var{option} is destroyed.
 @end defun
@@ -503,8 +504,18 @@ Usage example:
 @end lisp
 
 @c page
-@node plain info
-@section Device driver informations
+@node plain device
+@section Audio device objects
+
+
+@menu
+* plain device info::           Device driver informations.
+* plain device structs::        Device driver structs.
+@end menu
+
+@c page
+@node plain device info
+@subsection Device driver informations
 
 
 The following bindings are exported by the library
@@ -621,6 +632,171 @@ available.
 @end defun
 
 @c page
+@node plain device structs
+@subsection Device driver structs
+
+
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
+
+
+@deftp {Struct Type} ao-device
+@cindex Argument @var{device}
+@cindex @var{device} argument
+Opaque structure type referencing an instance of the C language type
+@code{ao_device}.  When instances of this type are used as arguments to
+functions: this documentation identifies them as @var{device}.
+
+Instances of this type must be finalised with @func{ao-close}; whenever
+an instance of this type is garbage collected: @func{ao-close} is
+automatically applied to it and any error ignored.
+
+In certain contexts, instances of this type own the referenced
+@code{ao_device} value, in other contexts they do not:
+
+@itemize
+@item
+Finalising a @objtype{ao-device} instance owning the @code{ao_device}
+value, causes finalisation of the @code{ao_device} value too.
+
+@item
+Finalising a @objtype{ao-device} instance @strong{not} owning the
+@code{ao_device} value, leaves the @code{ao_device} untouched.
+@end itemize
+
+@noindent
+this should happen transparently.
+@end deftp
+
+
+@defun ao-device? @var{obj}
+Return @true{} if @var{obj} is an instance of @objtype{ao-device};
+otherwise return @false{}.
+@end defun
+
+
+@defun ao-device?/alive @var{obj}
+Return @true{} if @var{obj} is an instance of @objtype{ao-device} and it
+has not been finalised; return @false{} otherwise.
+@end defun
+
+@c ------------------------------------------------------------
+
+@subsubheading Object properties
+
+
+@defun ao-device-putprop @var{device} @var{key} @var{value}
+Add a new property @var{key} to the property list of @var{device};
+@var{key} must be a symbol.  If @var{key} is already set: the old entry
+is mutated to reference the new @var{value}.
+@end defun
+
+
+@defun ao-device-getprop @var{device} @var{key}
+Return the value of the property @var{key} in the property list of
+@var{device}; if @var{key} is not set: return @false{}.  @var{key} must
+be a symbol.
+@end defun
+
+
+@defun ao-device-remprop @var{device} @var{key}
+Remove the property @var{key} from the property list of @var{device}; if
+@var{key} is not set: nothing happens.  @var{key} must be a symbol.
+@end defun
+
+
+@defun ao-device-property-list @var{device}
+Return a new association list representing the property list of
+@var{device}.  The order of the entries is the same as the property
+creation order.
+@end defun
+
+@c ------------------------------------------------------------
+
+@subsubheading Custom destructor
+
+
+@defun device-custom-destructor @var{device}
+@defunx set-device-custom-destructor! @var{device} @var{func}
+Retrieve or set a destructor function associated to @var{device}.
+
+Whenever @var{device} is finalised, either explicitly with
+@func{ao-close} or implicitly by the garbage collector, @var{func} is
+applied to @var{device} before the internal state of @var{device} is
+destroyed.
+@end defun
+
+@c ------------------------------------------------------------
+
+@subsubheading Other operations
+
+
+@defun ao-device-hash @var{device}
+Return an exact integer to be used as hashtable key for @var{device}.
+Hashtables having a @objtype{ao-device} as key can be instantiated as
+follows:
+
+@example
+(make-hashtable ao-device-hash eq?)
+@end example
+@end defun
+
+@c page
+@node plain samples
+@section Describing audio samples
+
+
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
+
+
+@deftp {Object Type} ao-sample-format
+Describe the structure of audio samples.  It has the following fields:
+
+@table @code
+@item bits
+Positive exact integer representing the number of bits per sample.  It
+must be an exact multiple of @math{8}.
+
+@item rate
+Positive exact integer representing the number of samples per second (in
+a single channel).
+
+@item channels
+Positive exact integer representing the number of audio channels.
+
+@item byte-format
+Byte ordering in sample.  It must be one among the constants:
+@code{AO_FMT_LITTLE} ,@code{AO_FMT_BIG} ,@code{AO_FMT_NATIVE}.
+
+@item matrix
+Channel input matrix.  It must be @false{} or a generalised C string
+with @ascii{} representation (@libsref{cbuffers strings, Introduction to
+generalised C strings}).  See @libao{}'s documentation for its format.
+@end table
+@end deftp
+
+
+@defun make-ao-sample-format
+Build and return an object of type @objtype{ao-sample-format}.
+@end defun
+
+
+@defun ao-sample-format? @var{obj}
+Return @true{} if @var{obj} is an object of type
+@objtype{ao-sample-format}.
+@end defun
+
+
+@defun ao-sample-format-bits @var{format}
+@defunx ao-sample-format-rate @var{format}
+@defunx ao-sample-format-channels @var{format}
+@defunx ao-sample-format-byte-format @var{format}
+@defunx ao-sample-format-matrix @var{format}
+Accessors for the fields of @objtype{ao-sample-format} objects.
+@end defun
+
+@c page
 @node plain playback
 @section Playing sounds
 
@@ -629,7 +805,20 @@ The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@defun ao-open-live
+@defun ao-open-live @var{driver-id} @var{sample-format} @var{options}
+Open a live playback audio device for output.  When successful return an
+object of type @objtype{ao-driver}.  If an error occurs opening the
+device: raise an exception; notice that, in case of error, @libao{} will
+print messages on the process's standard error file descriptor.
+
+@var{driver-id} must be an exact integer representing a device
+identifier, as returned by @func{ao-driver-id} or
+@func{ao-default-driver-id}.
+
+@var{sample-format} must be an object of type
+@objtype{ao-sample-format}.
+
+@var{options} must be @false{} or an object of type @objtype{ao-option}.
 @end defun
 
 
@@ -637,11 +826,35 @@ The following bindings are exported by the library
 @end defun
 
 
-@defun ao-play
+@defun ao-play @var{device} @var{samples}
+Play a block of audio data to an open device.  When successful return
+@true{}; otherwise return @false{}.  @var{device} must be an object of
+type @objtype{ao-device}.  @var{samples} must be a bytevector
+representing the output samples.
+
+The samples must be made available in a bytevector representing an array
+of 32-bit slots; each with format:
+
+@example
+ channel 1 LSB channel 2 LSB channel 1 MSB channel 2 MSB
+|-------------|-------------|-------------|-------------|
+@end example
+
+@noindent
+where @acronym{}LSB stands for Least Significant Byte and @acronym{MSB}
+stands for Most Significant Byte.
 @end defun
 
 
-@defun ao-close
+@defun ao-close @var{device}
+Finalise @var{device}; return @true{} if the finalisation is successful,
+otherwise return @false{}.  It is fine to apply this function multiple
+times to the same @var{device} value: the first time the underlying data
+structure is finalised, the subsequent times nothing happens.
+
+If this function is applied to a @var{device} value not owning the
+underlying @code{ao_device} value: @var{device} is finalised, but the
+@code{ao_device} value is left alone.
 @end defun
 
 @c page
@@ -657,6 +870,92 @@ The following bindings are exported by the library
 Return a boolean: true if the host is big endian; false if the host is
 little endian.
 @end defun
+
+@c page
+@node plain examples
+@section Usage examples
+
+
+We will generate some notes using mostly sinusoidal waveforms.  It is
+useful to know the frequencies of notes.
+
+@float
+@multitable {Note} {Note} {Freq (Hz)}
+@headitem Note @tab Note @tab Freq (Hz)
+@item A4 @tab La  @tab  440.00
+@item B4 @tab Si  @tab  493.88
+@item C5 @tab Do  @tab  523.25
+@item D5 @tab Re  @tab  587.33
+@item E5 @tab Mi  @tab  659.25
+@item F5 @tab Fa  @tab  698.46
+@item G5 @tab Sol @tab  783.99
+@item A5 @tab La  @tab  880.00
+@item B5 @tab Si  @tab  987.77
+@item C6 @tab Do  @tab 1046.50
+@end multitable
+@caption{Some notes frequencies in Hertz.}
+@end float
+
+All the examples are meant to have the following preamble:
+
+@smalllisp
+(import (vicare)
+  (prefix (vicare multimedia ao) ao.)
+  (prefix (vicare multimedia ao constants) ao.)
+  (vicare numerics constants))
+
+(ao.ao-initialise)
+
+(define-constant A4   440.00)
+(define-constant B4   493.88)
+(define-constant C5   523.25)
+(define-constant D5   587.33)
+(define-constant E5   659.25)
+(define-constant F5   698.46)
+(define-constant Fs5  739.995)
+(define-constant G5   783.99)
+(define-constant A5   880.00)
+(define-constant B5   987.77)
+(define-constant C6  1046.50)
+
+(define sample-format
+  (let ((bits         16)    ;how many bits per sample
+        (rate         44100) ;how many samples per second
+        (channels     2)
+        (byte-format  ao.AO_FMT_LITTLE)
+        (matrix       "L,R"))
+    (ao.make-ao-sample-format bits rate channels byte-format matrix)))
+@end smalllisp
+
+
+Here is how we play a scale of notes, by generating a bytevector for
+every note:
+
+@smalllisp
+(define device
+  (let ((driver-options #f))
+    (ao.ao-open-live (ao.ao-default-driver-id) sample-format driver-options)))
+
+@end smalllisp
+
+Here is how we play a scale of notes, by generating a single bytevector
+for all the scale:
+
+@smalllisp
+(define device
+  (let ((driver-options #f))
+    (ao.ao-open-live (ao.ao-default-driver-id) sample-format driver-options)))
+
+@end smalllisp
+
+Here is how we play a bit of Black Sabbath's ``Iron Man'' song:
+
+@smalllisp
+(define device
+  (let ((driver-options #f))
+    (ao.ao-open-live (ao.ao-default-driver-id) sample-format driver-options)))
+
+@end smalllisp
 
 @c page
 @c ------------------------------------------------------------

@@ -31,7 +31,8 @@
   (prefix (vicare multimedia ao constants) ao.)
   (prefix (vicare multimedia ao cond-expand) ao.)
   (vicare language-extensions cond-expand)
-  (vicare arguments validation)
+  #;(vicare arguments validation)
+  (vicare numerics constants)
   (vicare checks))
 
 (check-set-mode! 'report-failed)
@@ -205,13 +206,15 @@
 
   (check
       (let ((I (ao.ao-driver-info (ao.ao-driver-id "alsa"))))
-	(fprintf (current-error-port) "ao-info: ~a\n" I)
+	(when #f
+	  (fprintf (current-error-port) "ao-info: ~a\n" I))
 	(ao.ao-info? I))
     => #t)
 
   (check
       (let ((I (ao.ao-driver-info (ao.ao-driver-id "oss"))))
-	(fprintf (current-error-port) "ao-info: ~a\n" I)
+	(when #f
+	  (fprintf (current-error-port) "ao-info: ~a\n" I))
 	(ao.ao-info? I))
     => #t)
 
@@ -222,7 +225,8 @@
 
   (check-for-true
    (let ((L (ao.ao-driver-info-list)))
-     (pretty-print L (current-error-port))
+     (when #f
+       (pretty-print L (current-error-port)))
      (for-all ao.ao-info? L)))
 
 ;;; --------------------------------------------------------------------
@@ -239,9 +243,191 @@
   #t)
 
 
+(parametrise ((check-test-name		'struct-device)
+	      (struct-guardian-logger	#t))
+
+  (define-constant SAMPLE-FORMAT
+    (let ((bits		16)
+	  (rate		44100)
+	  (channels	2)
+	  (byte-format	ao.AO_FMT_NATIVE)
+	  (matrix	"L,R"))
+      (ao.make-ao-sample-format bits rate channels byte-format matrix)))
+
+  (define-constant DEVICE-ID
+    (ao.ao-default-driver-id))
+
+  (define-constant DRIVER-OPTIONS
+    #f)
+
+  (define (make-device)
+    (ao.ao-open-live DEVICE-ID SAMPLE-FORMAT DRIVER-OPTIONS))
+
+  ;;NOTE We must  always close the device  either explicitly or by  running a garbage
+  ;;collection, otherwise  trying to  open a  new device will  fail with  a "resource
+  ;;busy" error.
+
+;;; --------------------------------------------------------------------
+
+  (check	;this will be garbage collected
+      (let ((device (make-device)))
+;;;(debug-print device)
+	(ao.ao-device? device))
+    => #t)
+
+  (collect)
+
+  (check
+      (ao.ao-device?/alive (make-device))
+    => #t)
+
+  (collect)
+
+  (check	;single finalisation
+      (let ((device (make-device)))
+  	(ao.ao-close device))
+    => #t)
+
+  (collect)
+
+  (check	;double finalisation
+      (let ((device (make-device)))
+	(let* ((rv1 (ao.ao-close device))
+	       (rv2 (ao.ao-close device)))
+	  (values rv1 rv2)))
+    => #t #f)
+
+  (collect)
+
+  (check	;alive predicate after finalisation
+      (let ((device (make-device)))
+  	(ao.ao-close device)
+  	(ao.ao-device?/alive device))
+    => #f)
+
+;;; --------------------------------------------------------------------
+;;; destructor
+
+  (check
+      (with-result
+	(let ((device (make-device)))
+	  (ao.set-ao-device-custom-destructor! device (lambda (device)
+							(add-result 123)))
+	  (ao.ao-close device)))
+    => '(#t (123)))
+
+  (collect)
+
+;;; --------------------------------------------------------------------
+;;; hash
+
+  (check-for-true
+   (integer? (ao.ao-device-hash (make-device))))
+
+  (collect)
+
+  (check
+      (let ((A (make-device))
+	    (T (make-hashtable ao.ao-device-hash eq?)))
+	(hashtable-set! T A 1)
+	(hashtable-ref T A #f))
+    => 1)
+
+  (collect)
+
+;;; --------------------------------------------------------------------
+;;; properties
+
+  (check
+      (let ((device (make-device)))
+	(ao.ao-device-property-list device))
+    => '())
+
+  (collect)
+
+  (check
+      (let ((device (make-device)))
+	(ao.ao-device-putprop device 'ciao 'salut)
+	(ao.ao-device-getprop device 'ciao))
+    => 'salut)
+
+  (collect)
+
+  (check
+      (let ((device (make-device)))
+	(ao.ao-device-getprop device 'ciao))
+    => #f)
+
+  (collect)
+
+  (check
+      (let ((device (make-device)))
+	(ao.ao-device-putprop device 'ciao 'salut)
+	(ao.ao-device-remprop device 'ciao)
+	(ao.ao-device-getprop device 'ciao))
+    => #f)
+
+  (collect)
+
+  (check
+      (let ((device (make-device)))
+	(ao.ao-device-putprop device 'ciao 'salut)
+	(ao.ao-device-putprop device 'hello 'ohayo)
+	(list (ao.ao-device-getprop device 'ciao)
+	      (ao.ao-device-getprop device 'hello)))
+    => '(salut ohayo))
+
+  (collect))
+
+
+(parametrise ((check-test-name		'playback))
+
+  (check
+      (let ((bits		16)
+	    (rate		44100)
+	    (channels		2)
+	    (byte-format	ao.AO_FMT_LITTLE)
+	    (matrix		"L,R"))
+	(let* ((id		(ao.ao-default-driver-id))
+	       (sample-format	(ao.make-ao-sample-format bits rate channels byte-format matrix))
+	       (driver-options	#f)
+	       (device		(ao.ao-open-live id sample-format driver-options)))
+	  (fprintf (current-error-port)
+		   "audio array slot size: ~a bytes\n"
+		   (infix bits / 8 * channels))
+	  (let* ((samples.len  (infix bits / 8 * channels * rate))
+		 (samples.bv   (make-bytevector samples.len 0)))
+	    (do ((i 0 (fxadd1 i)))
+		((>= i rate))
+	      (let* ((freq   440.0)
+		     (sample (exact (floor (infix 0.75 * 32768.0 * sin(2 * greek-pi * freq * inexact(i / rate))))))
+		     (j      (infix 4 * i)))
+		;;Put the same  stuff in left and right channels.   The bytevector is
+		;;an array of 32-bit slots, each with format:
+		;;
+		;;    channel 1 LSB channel 2 LSB channel 1 MSB channel 1 MSB
+		;;   |-------------|-------------|-------------|-------------|
+		;;
+		;;where LSB stands for Least Significant Byte and MSB stands for Most
+		;;Significant Byte.
+		;;
+		(let ((sample.lsb (infix #xFF & sample)))
+		  (bytevector-u8-set! samples.bv j       sample.lsb)
+		  (bytevector-u8-set! samples.bv (+ j 2) sample.lsb))
+		(let ((sample.msb (infix #xFF & (sample >> 8))))
+		  (bytevector-u8-set! samples.bv (infix j + 1) sample.msb)
+		  (bytevector-u8-set! samples.bv (infix j + 3) sample.msb))))
+	    (let* ((rv1 (ao.ao-play  device samples.bv))
+		   (rv2 (ao.ao-close device)))
+	      (values rv1 rv2)))))
+    => #t #t)
+
+  (collect))
+
+
 (parametrise ((check-test-name		'misc))
 
-  (when #t
+  (when #f
     (fprintf (current-error-port)
 	     "big endian? ~a" (ao.ao-is-big-endian)))
 

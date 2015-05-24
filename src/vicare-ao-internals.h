@@ -48,6 +48,19 @@
 #define IK_AO_OPTION(OPTION)	\
   IK_POINTER_DATA_VOIDP(IK_AO_OPTION_POINTER(OPTION))
 
+/* Accessors for the fields of the Scheme structure "ao-device". */
+#define IK_AO_DEVICE_POINTER(DEVICE)	IK_FIELD((DEVICE),0)
+#define IK_AO_DEVICE_OWNER(DEVICE)	IK_FIELD((DEVICE),1)
+#define IK_AO_DEVICE(DEVICE)	\
+  IK_POINTER_DATA_VOIDP(IK_AO_DEVICE_POINTER(DEVICE))
+
+/* Accessors for the fields of the Scheme record "ao-sample-format". */
+#define IK_AO_SAMPLE_FORMAT_BITS(SAMPLE_FORMAT)		IK_FIELD((SAMPLE_FORMAT),0)
+#define IK_AO_SAMPLE_FORMAT_RATE(SAMPLE_FORMAT)		IK_FIELD((SAMPLE_FORMAT),1)
+#define IK_AO_SAMPLE_FORMAT_CHANNELS(SAMPLE_FORMAT)	IK_FIELD((SAMPLE_FORMAT),2)
+#define IK_AO_SAMPLE_FORMAT_BYTE_FORMAT(SAMPLE_FORMAT)	IK_FIELD((SAMPLE_FORMAT),3)
+#define IK_AO_SAMPLE_FORMAT_MATRIX(SAMPLE_FORMAT)	IK_FIELD((SAMPLE_FORMAT),4)
+
 
 /** --------------------------------------------------------------------
  ** Support for missing functions.

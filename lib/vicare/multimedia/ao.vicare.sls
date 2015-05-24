@@ -43,7 +43,7 @@
 
     ;; device options
     ao-option			ao-option?
-    ao-option?/alive		$ao-option-alive?
+    ao-option?/alive
     ao-option-custom-destructor	set-ao-option-custom-destructor!
     ao-option-putprop		ao-option-getprop
     ao-option-remprop		ao-option-property-list
@@ -62,7 +62,22 @@
     ao-info-priority
     ao-info-options
 
-    ;; device setup/playback/teardown
+    ;; device playback/teardown
+    ao-device			ao-device?
+    ao-device?/alive
+    ao-device-custom-destructor	set-ao-device-custom-destructor!
+    ao-device-putprop		ao-device-getprop
+    ao-device-remprop		ao-device-property-list
+    ao-device-hash
+
+    ao-sample-format
+    make-ao-sample-format	ao-sample-format?
+    ao-sample-format-bits
+    ao-sample-format-rate
+    ao-sample-format-channels
+    ao-sample-format-byte-format
+    ao-sample-format-matrix
+
     ao-open-live
     ao-open-file
     ao-play
@@ -164,17 +179,84 @@
 
 ;;;; devicae playback and teardown
 
-(define* (ao-open-live ctx)
-  (capi.ao-open-live))
+(ffi.define-foreign-pointer-wrapper ao-device
+  (ffi.foreign-destructor capi.ao-close)
+  (ffi.collector-struct-type #f))
+
+(define-record-type ao-sample-format
+  (fields (immutable bits)
+		;Bits per sample.
+	  (immutable rate)
+		;Samples per second (in a single channel).
+	  (immutable channels)
+		;Number of audio channels.
+	  (immutable byte-format)
+		;Byte ordering in sample.
+	  (immutable matrix)
+		;Channel input matrix.
+	  (immutable gen-matrix)
+		;Channel input matrix as general C string.
+	  #| end of FIELDS |# )
+  (protocol
+   (lambda (make-record)
+     (lambda* ({bits		(and words.signed-int? positive?)}
+	       {rate		(and words.signed-int? positive?)}
+	       {channels	(and words.signed-int? positive?)}
+	       {byte-format	byte-format?}
+	       {matrix		(or not general-c-string?)})
+       (make-record bits rate channels byte-format
+		    (if matrix
+			(with-general-c-strings
+			    ((matrix^	matrix))
+			  matrix^)
+		      matrix)
+		    matrix))))
+  #| end of DEFINE-RECORD-TYPE |# )
+
+(define (byte-format? obj)
+  (memv obj `(,AO_FMT_LITTLE ,AO_FMT_BIG ,AO_FMT_NATIVE)))
+
+(module ()
+  (set-rtd-printer! (type-descriptor ao-device)
+    (lambda (S port sub-printer)
+      (define-syntax-rule (%display thing)
+	(display thing port))
+      (define-syntax-rule (%write thing)
+	(write thing port))
+      (%display "#[ao-device")
+      (%display " pointer=")	(%display ($ao-device-pointer S))
+      (%display "]"))))
+
+(define* (ao-open-live {driver-id	(and words.signed-int? positive?)}
+		       {sample-format	ao-sample-format?}
+		       {options		(or not ao-option?/alive)})
+  (let ((rv (capi.ao-open-live driver-id sample-format options)))
+    (if (pointer? rv)
+	(make-ao-device/owner rv)
+      (error __who__
+	"error opening live device"
+	(cond
+	 ;;No driver corresponds to driver_id.
+	 ((= rv AO_ENODRIVER)		'AO_ENODRIVER)
+	 ;;This driver is not a live output device.
+	 ((= rv AO_ENOTLIVE)		'AO_ENOTLIVE)
+	 ;;A valid option key has an invalid value.
+	 ((= rv AO_EBADOPTION)		'AO_EBADOPTION)
+	 ;;Cannot open  the device  (for example,  if /dev/dsp  cannot be  opened for
+	 ;;writing).
+	 ((= rv AO_EOPENDEVICE)		'AO_EOPENDEVICE)
+	 ;;Any other cause of failure.
+	 ((= rv AO_EFAIL)		'AO_EFAIL)
+	 (else				'unknown-code))))))
 
 (define* (ao-open-file ctx)
   (capi.ao-open-file))
 
-(define* (ao-play ctx)
-  (capi.ao-play))
+(define* (ao-play {device ao-device?/alive} {output-samples bytevector?})
+  (capi.ao-play device output-samples))
 
-(define* (ao-close ctx)
-  (capi.ao-close))
+(define* (ao-close {device ao-device?})
+  ($ao-device-finalise device))
 
 
 ;;;; driver information

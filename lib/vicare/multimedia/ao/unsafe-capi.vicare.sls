@@ -94,29 +94,29 @@
 
 ;;; --------------------------------------------------------------------
 
-(define-syntax-rule (ao-append-option false/opt-pointer key val)
-  (foreign-call "ikrt_ao_append_option" false/opt-pointer key val))
+(define-syntax-rule (ao-append-option false/option key val)
+  (foreign-call "ikrt_ao_append_option" false/option key val))
 
-(define-syntax-rule (ao-free-options opt-pointer)
-  (foreign-call "ikrt_ao_free_options" opt-pointer))
+(define-syntax-rule (ao-free-options option)
+  (foreign-call "ikrt_ao_free_options" option))
 
-(define-syntax-rule (ao-option->alist opt-pointer)
-  (foreign-call "ikrt_ao_option_keys_and_vals" opt-pointer))
+(define-syntax-rule (ao-option->alist option)
+  (foreign-call "ikrt_ao_option_keys_and_vals" option))
 
 
 ;;;; device playback and teardown  unsafe C API
 
-(define-syntax-rule (ao-open-live)
-  (foreign-call "ikrt_ao_open_live"))
+(define-syntax-rule (ao-open-live driver-id sample-format options)
+  (foreign-call "ikrt_ao_open_live" driver-id sample-format options))
 
 (define-syntax-rule (ao-open-file)
   (foreign-call "ikrt_ao_open_file"))
 
-(define-syntax-rule (ao-play)
-  (foreign-call "ikrt_ao_play"))
+(define-syntax-rule (ao-play device output-samples)
+  (foreign-call "ikrt_ao_play" device output-samples))
 
-(define-syntax-rule (ao-close)
-  (foreign-call "ikrt_ao_close"))
+(define-syntax-rule (ao-close device)
+  (foreign-call "ikrt_ao_close" device))
 
 
 ;;;; driver information unsafe C API

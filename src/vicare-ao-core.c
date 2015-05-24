@@ -29,6 +29,7 @@
  ** ----------------------------------------------------------------- */
 
 #include "vicare-ao-internals.h"
+#include <string.h>
 
 
 /** --------------------------------------------------------------------
@@ -208,11 +209,60 @@ ikrt_ao_append_global_option (ikptr s_key, ikptr s_val, ikpcb * pcb)
  ** ----------------------------------------------------------------- */
 
 ikptr
-ikrt_ao_open_live (ikpcb * pcb)
+ikrt_ao_open_live (ikptr s_device_id, ikptr s_sample_format, ikptr s_option, ikpcb * pcb)
+/* Open a device for audio  playback.  When successful: return a pointer
+   object referencing  an "ao_device"  C language  struct.  If  an error
+   occurs: return an exact integer  representing a Libao error code (see
+   the documentation for details).
+
+   S_DEVICE_ID must be  an exact integer representing  the identifier of
+   an    audio   device,    obtained   with    a   previous    call   to
+   "ikrt_ao_driver_id()" or "ikrt_ao_default_driver_id".
+
+   S_SAMPLE_FORMAT  must be  a  reference  to a  Scheme  record of  type
+   "ao-sample-format".  Here it  is converted to a  C language structure
+   of type "ao_sample_format".
+
+   S_OPTION must  be false  or a  reference to a  Scheme struct  of type
+   "ao-option".
+*/
 {
 #ifdef HAVE_AO_OPEN_LIVE
-  /* rv = ao_open_live(); */
-  return IK_VOID;
+  int			id;
+  ao_sample_format	format;
+  ao_option *		option;
+  ao_device *		rv;
+  id = ik_integer_to_int(s_device_id);
+  if (IK_FALSE == s_option) {
+    option = NULL;
+  } else {
+    ikptr		s_pointer = IK_AO_OPTION_POINTER(s_option);
+    option = IK_POINTER_DATA_VOIDP(s_pointer);
+  }
+  memset(&format, '\0', sizeof(format));
+  format.bits		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BITS(s_sample_format));
+  format.rate		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_RATE(s_sample_format));
+  format.channels	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_CHANNELS(s_sample_format));
+  format.byte_format	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BYTE_FORMAT(s_sample_format));
+  {
+    ikptr	s_matrix = IK_AO_SAMPLE_FORMAT_MATRIX(s_sample_format);
+    if (IK_FALSE == s_matrix) {
+      format.matrix	= NULL;
+    } else {
+      format.matrix	= IK_GENERALISED_C_STRING(s_matrix);
+    }
+  }
+  if (0) {
+    fprintf(stderr, "%s: bits %d, channels %d, rate %d, byte_format %d\n",
+	    __func__, format.bits, format.channels, format.rate, format.byte_format);
+  }
+  errno = 0;
+  rv    = ao_open_live(id, &format, option);
+  if (rv) {
+    return ika_pointer_alloc(pcb, (ikuword_t)rv);
+  } else {
+    return ika_integer_from_int(pcb, errno);
+  }
 #else
   feature_failure(__func__);
 #endif
@@ -228,21 +278,34 @@ ikrt_ao_open_file (ikpcb * pcb)
 #endif
 }
 ikptr
-ikrt_ao_play (ikpcb * pcb)
+ikrt_ao_play (ikptr s_device, ikptr s_output_samples, ikpcb * pcb)
 {
 #ifdef HAVE_AO_PLAY
-  /* rv = ao_play(); */
-  return IK_VOID;
+  ao_device *	device		= IK_AO_DEVICE(s_device);
+  char *	output_samples	= IK_BYTEVECTOR_DATA_CHARP(s_output_samples);
+  uint_32	num_bytes	= (uint_32)IK_BYTEVECTOR_LENGTH(s_output_samples);
+  int		rv;
+  rv = ao_play(device, output_samples, num_bytes);
+  return IK_BOOLEAN_FROM_INT(rv);
 #else
   feature_failure(__func__);
 #endif
 }
 ikptr
-ikrt_ao_close (ikpcb * pcb)
+ikrt_ao_close (ikptr s_device, ikpcb * pcb)
 {
 #ifdef HAVE_AO_CLOSE
-  /* rv = ao_close(); */
-  return IK_VOID;
+  ikptr		s_pointer	= IK_AO_DEVICE_POINTER(s_device);
+  int		rv		= 1;
+  if (ik_is_pointer(s_pointer)) {
+    ao_device *		device	= IK_POINTER_DATA_VOIDP(s_pointer);
+    int			owner	= IK_BOOLEAN_TO_INT(IK_AO_DEVICE_OWNER(s_device));
+    if (device && owner) {
+      rv = ao_close(device);
+      IK_POINTER_SET_NULL(s_pointer);
+    }
+  }
+  return (rv)? IK_TRUE : IK_FALSE;
 #else
   feature_failure(__func__);
 #endif
