@@ -38,6 +38,7 @@
 
   ;; cond-expand clauses initialisation and shutdown
   (ao-initialize			HAVE_AO_INITIALIZE)
+  (ao-initialise			HAVE_AO_INITIALIZE)
   (ao-shutdown				HAVE_AO_SHUTDOWN)
 
   ;; cond-expand clauses device setup/playback/teardown
