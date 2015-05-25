@@ -805,7 +805,8 @@ The following bindings are exported by the library
 @value{FOREIGN_SCHEME_LIB}.
 
 
-@defun ao-open-live @var{driver-id} @var{sample-format} @var{options}
+@defun ao-open-live @var{driver-id} @var{sample-format}
+@defunx ao-open-live @var{driver-id} @var{sample-format} @var{options}
 Open a live playback audio device for output.  When successful return an
 object of type @objtype{ao-driver}.  If an error occurs opening the
 device: raise an exception; notice that, in case of error, @libao{} will
@@ -813,7 +814,8 @@ print messages on the process's standard error file descriptor.
 
 @var{driver-id} must be an exact integer representing a device
 identifier, as returned by @func{ao-driver-id} or
-@func{ao-default-driver-id}.
+@func{ao-default-driver-id}.  Examples of driver names for live output
+are: @samp{alsa}, @samp{oss}.
 
 @var{sample-format} must be an object of type
 @objtype{ao-sample-format}.
@@ -822,7 +824,25 @@ identifier, as returned by @func{ao-driver-id} or
 @end defun
 
 
-@defun ao-open-file
+@defun ao-open-file @var{driver-id} @var{filename} @var{overwrite?} @var{sample-format}
+@defunx ao-open-file @var{driver-id} @var{filename} @var{overwrite?} @var{sample-format} @var{options}
+Open a file playback audio device for output.  When successful return an
+object of type @objtype{ao-driver}.  If an error occurs opening the
+device: raise an exception; notice that, in case of error, @libao{} will
+print messages on the process's standard error file descriptor.
+
+@var{driver-id} must be an exact integer representing a device
+identifier, as returned by @func{ao-driver-id} or
+@func{ao-default-driver-id}.  Examples of driver names for file output
+are: @samp{au}, @samp{raw}, @samp{wav}.
+
+@var{filename} must be generalised C string with @ascii{} representation
+(@libsref{cbuffers strings, Introduction to generalised C strings}).
+
+@var{sample-format} must be an object of type @objtype{ao-sample-format}
+specifying the format of the input samples.
+
+@var{options} must be @false{} or an object of type @objtype{ao-option}.
 @end defun
 
 

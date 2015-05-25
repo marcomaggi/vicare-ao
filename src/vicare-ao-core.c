@@ -208,6 +208,22 @@ ikrt_ao_append_global_option (ikptr s_key, ikptr s_val, ikpcb * pcb)
  ** Device playback and teardown C wrappers.
  ** ----------------------------------------------------------------- */
 
+static void
+ik_ao_sample_format_from_record (ao_sample_format * format, ikptr s_sample_format)
+{
+  memset(format, '\0', sizeof(ao_sample_format));
+  format->bits		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BITS(s_sample_format));
+  format->rate		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_RATE(s_sample_format));
+  format->channels	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_CHANNELS(s_sample_format));
+  format->byte_format	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BYTE_FORMAT(s_sample_format));
+  {
+    ikptr	s_matrix = IK_AO_SAMPLE_FORMAT_MATRIX(s_sample_format);
+    format->matrix = (IK_FALSE == s_matrix)? NULL : IK_GENERALISED_C_STRING(s_matrix);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
 ikptr
 ikrt_ao_open_live (ikptr s_device_id, ikptr s_sample_format, ikptr s_option, ikpcb * pcb)
 /* Open a device for audio  playback.  When successful: return a pointer
@@ -232,26 +248,9 @@ ikrt_ao_open_live (ikptr s_device_id, ikptr s_sample_format, ikptr s_option, ikp
   ao_sample_format	format;
   ao_option *		option;
   ao_device *		rv;
-  id = ik_integer_to_int(s_device_id);
-  if (IK_FALSE == s_option) {
-    option = NULL;
-  } else {
-    ikptr		s_pointer = IK_AO_OPTION_POINTER(s_option);
-    option = IK_POINTER_DATA_VOIDP(s_pointer);
-  }
-  memset(&format, '\0', sizeof(format));
-  format.bits		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BITS(s_sample_format));
-  format.rate		= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_RATE(s_sample_format));
-  format.channels	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_CHANNELS(s_sample_format));
-  format.byte_format	= ik_integer_to_int(IK_AO_SAMPLE_FORMAT_BYTE_FORMAT(s_sample_format));
-  {
-    ikptr	s_matrix = IK_AO_SAMPLE_FORMAT_MATRIX(s_sample_format);
-    if (IK_FALSE == s_matrix) {
-      format.matrix	= NULL;
-    } else {
-      format.matrix	= IK_GENERALISED_C_STRING(s_matrix);
-    }
-  }
+  id     = ik_integer_to_int(s_device_id);
+  option = (IK_FALSE == s_option)? NULL : IK_AO_OPTION(s_option);
+  ik_ao_sample_format_from_record(&format, s_sample_format);
   if (0) {
     fprintf(stderr, "%s: bits %d, channels %d, rate %d, byte_format %d\n",
 	    __func__, format.bits, format.channels, format.rate, format.byte_format);
@@ -268,11 +267,28 @@ ikrt_ao_open_live (ikptr s_device_id, ikptr s_sample_format, ikptr s_option, ikp
 #endif
 }
 ikptr
-ikrt_ao_open_file (ikpcb * pcb)
+ikrt_ao_open_file (ikptr s_driver_id, ikptr s_filename, ikptr s_overwrite,
+		   ikptr s_sample_format, ikptr s_option, ikpcb * pcb)
 {
 #ifdef HAVE_AO_OPEN_FILE
-  /* rv = ao_open_file(); */
-  return IK_VOID;
+  int			driver_id	= ik_integer_to_int(s_driver_id);
+  const char *		filename	= IK_GENERALISED_C_STRING(s_filename);
+  int			overwrite	= IK_BOOLEAN_TO_INT(s_overwrite);
+  ao_sample_format	format;
+  ao_option *		option		= (IK_FALSE == s_option)? NULL : IK_AO_OPTION(s_option);
+  ao_device *		rv;
+  ik_ao_sample_format_from_record(&format, s_sample_format);
+  if (0) {
+    fprintf(stderr, "%s: driver_id %d, filename %s, overwrite? %d\n",
+	    __func__, driver_id, filename, overwrite);
+  }
+  errno = 0;
+  rv = ao_open_file(driver_id, filename, overwrite, &format, option);
+  if (rv) {
+    return ika_pointer_alloc(pcb, (ikuword_t)rv);
+  } else {
+    return ika_integer_from_int(pcb, errno);
+  }
 #else
   feature_failure(__func__);
 #endif

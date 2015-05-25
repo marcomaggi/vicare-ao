@@ -109,8 +109,8 @@
 (define-syntax-rule (ao-open-live driver-id sample-format options)
   (foreign-call "ikrt_ao_open_live" driver-id sample-format options))
 
-(define-syntax-rule (ao-open-file)
-  (foreign-call "ikrt_ao_open_file"))
+(define-syntax-rule (ao-open-file driver-id filename overwrite? sample-format options)
+  (foreign-call "ikrt_ao_open_file" driver-id filename overwrite? sample-format options))
 
 (define-syntax-rule (ao-play device output-samples)
   (foreign-call "ikrt_ao_play" device output-samples))
@@ -141,12 +141,6 @@
 
 (define-syntax-rule (ao-is-big-endian)
   (foreign-call "ikrt_ao_is_big_endian"))
-
-
-;;;; still to be implemented
-
-#;(define-syntax-rule (vicare-ao)
-  (foreign-call "ikrt_ao"))
 
 
 ;;;; done

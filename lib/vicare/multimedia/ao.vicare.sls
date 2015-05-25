@@ -227,30 +227,62 @@
       (%display " pointer=")	(%display ($ao-device-pointer S))
       (%display "]"))))
 
-(define* (ao-open-live {driver-id	(and words.signed-int? positive?)}
-		       {sample-format	ao-sample-format?}
-		       {options		(or not ao-option?/alive)})
-  (let ((rv (capi.ao-open-live driver-id sample-format options)))
-    (if (pointer? rv)
-	(make-ao-device/owner rv)
-      (error __who__
-	"error opening live device"
-	(cond
-	 ;;No driver corresponds to driver_id.
-	 ((= rv AO_ENODRIVER)		'AO_ENODRIVER)
-	 ;;This driver is not a live output device.
-	 ((= rv AO_ENOTLIVE)		'AO_ENOTLIVE)
-	 ;;A valid option key has an invalid value.
-	 ((= rv AO_EBADOPTION)		'AO_EBADOPTION)
-	 ;;Cannot open  the device  (for example,  if /dev/dsp  cannot be  opened for
-	 ;;writing).
-	 ((= rv AO_EOPENDEVICE)		'AO_EOPENDEVICE)
-	 ;;Any other cause of failure.
-	 ((= rv AO_EFAIL)		'AO_EFAIL)
-	 (else				'unknown-code))))))
+(case-define* ao-open-live
+  ((driver-id sample-format)
+   (ao-open-live driver-id sample-format #f))
+  (({driver-id		(and words.signed-int? positive?)}
+    {sample-format	ao-sample-format?}
+    {options		(or not ao-option?/alive)})
+   (let ((rv (capi.ao-open-live driver-id sample-format options)))
+     (if (pointer? rv)
+	 (make-ao-device/owner rv)
+       (error __who__
+	 "error opening live device"
+	 (cond
+	  ;;No driver corresponds to driver_id.
+	  ((= rv AO_ENODRIVER)		'AO_ENODRIVER)
+	  ;;This driver is not a live output device.
+	  ((= rv AO_ENOTLIVE)		'AO_ENOTLIVE)
+	  ;;A valid option key has an invalid value.
+	  ((= rv AO_EBADOPTION)		'AO_EBADOPTION)
+	  ;;Cannot open  the device (for  example, if  /dev/dsp cannot be  opened for
+	  ;;writing).
+	  ((= rv AO_EOPENDEVICE)	'AO_EOPENDEVICE)
+	  ;;Any other cause of failure.
+	  ((= rv AO_EFAIL)		'AO_EFAIL)
+	  (else				'unknown-code))))))
+  #| end of CASE-DEFINE* |# )
 
-(define* (ao-open-file ctx)
-  (capi.ao-open-file))
+(case-define* ao-open-file
+  ((driver-id filename overwrite? sample-format)
+   (ao-open-file driver-id filename overwrite? sample-format #f))
+  (({driver-id		(and words.signed-int? positive?)}
+    {filename		general-c-string?}
+    overwrite?
+    {sample-format	ao-sample-format?}
+    {options		(or not ao-option?/alive)})
+   (with-general-c-strings
+       ((filename^	filename))
+     (let ((rv (capi.ao-open-file driver-id filename^ overwrite? sample-format options)))
+       (if (pointer? rv)
+	   (make-ao-device/owner rv)
+	 (error __who__
+	   "error opening file device"
+	   (cond
+	    ;;No driver corresponds to driver_id.
+	    ((= rv AO_ENODRIVER)	'AO_ENODRIVER)
+	    ;;This driver is not a file output device.
+	    ((= rv AO_ENOTFILE)		'AO_ENOTFILE)
+	    ;;A valid option key has an invalid value.
+	    ((= rv AO_EBADOPTION)	'AO_EBADOPTION)
+	    ;;Cannot open the file.
+	    ((= rv AO_EOPENFILE)	'AO_EOPENFILE)
+	    ;;The  file already exists.
+	    ((= rv AO_EFILEEXISTS)	'AO_EFILEEXISTS)
+	    ;;Any other cause of failure.
+	    ((= rv AO_EFAIL)		'AO_EFAIL)
+	    (else			'unknown-code)))))))
+  #| end of CASE-DEFINE* |# )
 
 (define* (ao-play {device ao-device?/alive} {output-samples bytevector?})
   (capi.ao-play device output-samples))
