@@ -428,43 +428,48 @@
 (parametrise ((check-test-name		'file-output))
 
   (check
-      (let ((bits		16)
-	    (rate		44100)
-	    (channels		2)
-	    (byte-format	ao.AO_FMT_LITTLE)
-	    (matrix		"L,R"))
-	(let* ((id		(ao.ao-driver-id "wav"))
-	       (sample-format	(ao.make-ao-sample-format bits rate channels byte-format matrix))
-	       (driver-options	#f)
-	       (device		(ao.ao-open-file id "output.wav" #t sample-format driver-options)))
-	  (fprintf (current-error-port)
-		   "audio array slot size: ~a bytes\n"
-		   (infix bits / 8 * channels))
-	  (let* ((samples.len  (infix bits / 8 * channels * rate))
-		 (samples.bv   (make-bytevector samples.len 0)))
-	    (do ((i 0 (fxadd1 i)))
-		((>= i rate))
-	      (let* ((freq   440.0)
-		     (sample (exact (floor (infix 0.75 * 32768.0 * sin(2 * greek-pi * freq * inexact(i / rate))))))
-		     (j      (infix 4 * i)))
-		;;Put the same  stuff in left and right channels.   The bytevector is
-		;;an array of 32-bit slots, each with format:
-		;;
-		;;    channel 1 LSB channel 2 LSB channel 1 MSB channel 1 MSB
-		;;   |-------------|-------------|-------------|-------------|
-		;;
-		;;where LSB stands for Least Significant Byte and MSB stands for Most
-		;;Significant Byte.
-		;;
-		(let ((sample.lsb (infix #xFF & sample)))
-		  (bytevector-u8-set! samples.bv j       sample.lsb)
-		  (bytevector-u8-set! samples.bv (+ j 2) sample.lsb))
-		(let ((sample.msb (infix #xFF & (sample >> 8))))
-		  (bytevector-u8-set! samples.bv (infix j + 1) sample.msb)
-		  (bytevector-u8-set! samples.bv (infix j + 3) sample.msb))))
-	    (let* ((rv1 (ao.ao-play  device samples.bv))
-		   (rv2 (ao.ao-close device)))
-	      (values rv1 rv2)))))
+      (with-unwind-protection
+	  (lambda (E)
+	    (when (file-exists? "output.wav")
+	      (delete-file "output.wav")))
+	(lambda ()
+	  (let ((bits		16)
+		(rate		44100)
+		(channels	2)
+		(byte-format	ao.AO_FMT_LITTLE)
+		(matrix		"L,R"))
+	    (let* ((id			(ao.ao-driver-id "wav"))
+		   (sample-format	(ao.make-ao-sample-format bits rate channels byte-format matrix))
+		   (driver-options	#f)
+		   (device		(ao.ao-open-file id "output.wav" #t sample-format driver-options)))
+	      (fprintf (current-error-port)
+		       "audio array slot size: ~a bytes\n"
+		       (infix bits / 8 * channels))
+	      (let* ((samples.len  (infix bits / 8 * channels * rate))
+		     (samples.bv   (make-bytevector samples.len 0)))
+		(do ((i 0 (fxadd1 i)))
+		    ((>= i rate))
+		  (let* ((freq   440.0)
+			 (sample (exact (floor (infix 0.75 * 32768.0 * sin(2 * greek-pi * freq * inexact(i / rate))))))
+			 (j      (infix 4 * i)))
+		    ;;Put the same  stuff in left and right channels.   The bytevector is
+		    ;;an array of 32-bit slots, each with format:
+		    ;;
+		    ;;    channel 1 LSB channel 2 LSB channel 1 MSB channel 1 MSB
+		    ;;   |-------------|-------------|-------------|-------------|
+		    ;;
+		    ;;where LSB stands for Least Significant Byte and MSB stands for Most
+		    ;;Significant Byte.
+		    ;;
+		    (let ((sample.lsb (infix #xFF & sample)))
+		      (bytevector-u8-set! samples.bv j       sample.lsb)
+		      (bytevector-u8-set! samples.bv (+ j 2) sample.lsb))
+		    (let ((sample.msb (infix #xFF & (sample >> 8))))
+		      (bytevector-u8-set! samples.bv (infix j + 1) sample.msb)
+		      (bytevector-u8-set! samples.bv (infix j + 3) sample.msb))))
+		(let* ((rv1 (ao.ao-play  device samples.bv))
+		       (rv2 (ao.ao-close device)))
+		  (values rv1 rv2)))))))
     => #t #t)
 
   (collect))
