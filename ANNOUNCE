@@ -1,4 +1,5 @@
-Subject: [announce] Vicare/AO revision 0.4d0
+﻿-*- coding: utf-8-with-signature-unix -*-
+Subject: [announce] Vicare/AO revision 0.4d1
 
 			       Vicare/AO
 			       =========
@@ -31,6 +32,12 @@ and as backup at:
 tested Libao version 1.2.0; the Libao library is available at:
 
 			   <http://xiph.org/>
+
+
+Notes for revision 0.4d1
+------------------------
+
+* Ensures support for Vicare Scheme 0.4d1.
 
 
 Notes for revision 0.4d0

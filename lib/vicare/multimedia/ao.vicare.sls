@@ -8,7 +8,7 @@
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2015 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2015, 2017 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -27,6 +27,7 @@
 
 #!vicare
 (library (vicare multimedia ao)
+  (options typed-language)
   (foreign-library "vicare-ao")
   (export
 
@@ -92,53 +93,52 @@
 
     ;; miscellaneous
     ao-is-big-endian)
-  (import (vicare (or (0 4 2015 5 (>= 23))
-		      (0 4 2015 (>= 6))
-		      (0 4 (>= 2016))))
+  (import (vicare (0 4 2017 1 (>= 10)))
+    (prefix (vicare system structs) structs::)
     (vicare multimedia ao constants)
-    (prefix (vicare multimedia ao unsafe-capi) capi.)
+    (prefix (vicare multimedia ao unsafe-capi) capi::)
     (prefix (vicare ffi (or (0 4 2015 5 (>= 28))
 			    (0 4 2015 (>= 6))
 			    (0 4 (>= 2016))))
-	    ffi.)
-    (prefix (vicare ffi foreign-pointer-wrapper) ffi.)
+	    ffi::)
+    (prefix (vicare ffi foreign-pointer-wrapper) ffi::)
     (vicare arguments validation)
     (vicare arguments general-c-buffers)
-    (prefix (vicare platform words) words.))
+    (prefix (vicare platform words) words::))
 
 
 ;;;; version functions
 
 (define (vicare-ao-version-interface-current)
-  (capi.vicare-ao-version-interface-current))
+  (capi::vicare-ao-version-interface-current))
 
 (define (vicare-ao-version-interface-revision)
-  (capi.vicare-ao-version-interface-revision))
+  (capi::vicare-ao-version-interface-revision))
 
 (define (vicare-ao-version-interface-age)
-  (capi.vicare-ao-version-interface-age))
+  (capi::vicare-ao-version-interface-age))
 
 (define (vicare-ao-version)
-  (ascii->string (capi.vicare-ao-version)))
+  (ascii->string (capi::vicare-ao-version)))
 
 
 ;;;; initialisation and shutdown
 
 (define* (ao-initialize)
-  (capi.ao-initialize))
+  (capi::ao-initialize))
 
 (define* (ao-shutdown)
-  (capi.ao-shutdown))
+  (capi::ao-shutdown))
 
 
 ;;;; device options
 
-(ffi.define-foreign-pointer-wrapper ao-option
-  (ffi.foreign-destructor capi.ao-free-options)
-  (ffi.collector-struct-type #f))
+(ffi::define-foreign-pointer-wrapper ao-option
+  (ffi::foreign-destructor capi::ao-free-options)
+  (ffi::collector-struct-type #f))
 
 (module ()
-  (set-rtd-printer! (type-descriptor ao-option)
+  (structs::set-struct-type-printer! (type-descriptor ao-option)
     (lambda (S port sub-printer)
       (define-syntax-rule (%display thing)
 	(display thing port))
@@ -161,7 +161,7 @@
   (with-general-c-strings
       ((key^ key)
        (val^ val))
-    (cond ((capi.ao-append-option opt key^ val^)
+    (cond ((capi::ao-append-option opt key^ val^)
 	   => (lambda (rv)
 		;;RV is a pointer object referencing the linked list of "ao_option" C
 		;;structs.
@@ -173,20 +173,20 @@
   (map (lambda (entry)
 	 (cons (ascii->string (car entry))
 	       (ascii->string (cdr entry))))
-    (capi.ao-option->alist opt)))
+    (capi::ao-option->alist opt)))
 
 (define* (ao-append-global-option {key general-c-string?} {val general-c-string?})
   (with-general-c-strings
       ((key^ key)
        (val^ val))
-    (capi.ao-append-global-option key^ val^)))
+    (capi::ao-append-global-option key^ val^)))
 
 
 ;;;; devicae playback and teardown
 
-(ffi.define-foreign-pointer-wrapper ao-device
-  (ffi.foreign-destructor capi.ao-close)
-  (ffi.collector-struct-type #f))
+(ffi::define-foreign-pointer-wrapper ao-device
+  (ffi::foreign-destructor capi::ao-close)
+  (ffi::collector-struct-type #f))
 
 (define-record-type ao-sample-format
   (fields (immutable bits)
@@ -204,9 +204,9 @@
 	  #| end of FIELDS |# )
   (protocol
    (lambda (make-record)
-     (lambda* ({bits		(and words.signed-int? positive?)}
-	       {rate		(and words.signed-int? positive?)}
-	       {channels	(and words.signed-int? positive?)}
+     (lambda* ({bits		(and words::signed-int? positive?)}
+	       {rate		(and words::signed-int? positive?)}
+	       {channels	(and words::signed-int? positive?)}
 	       {byte-format	byte-format?}
 	       {matrix		(or not general-c-string?)})
        (make-record bits rate channels byte-format
@@ -222,7 +222,7 @@
   (memv obj `(,AO_FMT_LITTLE ,AO_FMT_BIG ,AO_FMT_NATIVE)))
 
 (module ()
-  (set-rtd-printer! (type-descriptor ao-device)
+  (structs::set-struct-type-printer! (type-descriptor ao-device)
     (lambda (S port sub-printer)
       (define-syntax-rule (%display thing)
 	(display thing port))
@@ -235,10 +235,10 @@
 (case-define* ao-open-live
   ((driver-id sample-format)
    (ao-open-live driver-id sample-format #f))
-  (({driver-id		(and words.signed-int? positive?)}
+  (({driver-id		(and words::signed-int? non-negative?)}
     {sample-format	ao-sample-format?}
     {options		(or not ao-option?/alive)})
-   (let ((rv (capi.ao-open-live driver-id sample-format options)))
+   (let ((rv (capi::ao-open-live driver-id sample-format options)))
      (if (pointer? rv)
 	 (make-ao-device/owner rv)
        (error __who__
@@ -261,14 +261,14 @@
 (case-define* ao-open-file
   ((driver-id filename overwrite? sample-format)
    (ao-open-file driver-id filename overwrite? sample-format #f))
-  (({driver-id		(and words.signed-int? positive?)}
+  (({driver-id		(and words::signed-int? non-negative?)}
     {filename		general-c-string?}
     overwrite?
     {sample-format	ao-sample-format?}
     {options		(or not ao-option?/alive)})
    (with-general-c-strings
        ((filename^	filename))
-     (let ((rv (capi.ao-open-file driver-id filename^ overwrite? sample-format options)))
+     (let ((rv (capi::ao-open-file driver-id filename^ overwrite? sample-format options)))
        (if (pointer? rv)
 	   (make-ao-device/owner rv)
 	 (error __who__
@@ -290,7 +290,7 @@
   #| end of CASE-DEFINE* |# )
 
 (define* (ao-play {device ao-device?/alive} {output-samples bytevector?})
-  (capi.ao-play device output-samples))
+  (capi::ao-play device output-samples))
 
 (define* (ao-close {device ao-device?})
   ($ao-device-finalise device))
@@ -298,7 +298,7 @@
 
 ;;;; driver information
 
-(define-struct ao-info
+(structs::define-struct ao-info
   (type
 		;One of the exact integers: AO_TYPE_LIVE, AO_TYPE_FILE.
    name
@@ -322,7 +322,7 @@
    ))
 
 (module ()
-  (set-rtd-printer! (type-descriptor ao-info)
+  (structs::set-struct-type-printer! (type-descriptor ao-info)
     (lambda (S port sub-printer)
       (define-syntax-rule (%display thing)
 	(display thing port))
@@ -341,23 +341,23 @@
 (define* (ao-driver-id {short-name general-c-string?})
   (with-general-c-strings
       ((short-name^	short-name))
-    (let ((rv (capi.ao-driver-id short-name^)))
+    (let ((rv (capi::ao-driver-id short-name^)))
       (if (positive? rv)
 	  rv
 	#f))))
 
 (define* (ao-default-driver-id)
-  (capi.ao-default-driver-id))
+  (capi::ao-default-driver-id))
 
 (define* (ao-driver-info id)
   (receive-and-return (rv)
-      (capi.ao-driver-info id (struct-type-descriptor ao-info))
+      (capi::ao-driver-info id (struct-type-descriptor ao-info))
     (when rv
       (%normalise-ao-info! rv))))
 
 (define* (ao-driver-info-list)
   (receive-and-return (L)
-      (capi.ao-driver-info-list (struct-type-descriptor ao-info))
+      (capi::ao-driver-info-list (struct-type-descriptor ao-info))
     (for-each %normalise-ao-info! L)))
 
 (define (%normalise-ao-info! info)
@@ -366,8 +366,8 @@
   (set-ao-info-comment!    info (ascii->string     (ao-info-comment    info)))
   (set-ao-info-options!    info (map ascii->string (ao-info-options    info))))
 
-(define* (ao-file-extension {id (and words.signed-int? positive?)})
-  (cond ((capi.ao-file-extension id)
+(define* (ao-file-extension {id (and words::signed-int? non-negative?)})
+  (cond ((capi::ao-file-extension id)
 	 => ascii->string)
 	(else #f)))
 
@@ -375,7 +375,7 @@
 ;;;; miscellaneous
 
 (define (ao-is-big-endian)
-  (capi.ao-is-big-endian))
+  (capi::ao-is-big-endian))
 
 
 ;;;; done
@@ -384,5 +384,5 @@
 
 ;;; end of file
 ;; Local Variables:
-;; eval: (put 'ffi.define-foreign-pointer-wrapper 'scheme-indent-function 1)
+;; eval: (put 'ffi::define-foreign-pointer-wrapper 'scheme-indent-function 1)
 ;; End:

@@ -24,7 +24,7 @@ doc_vicare_ao_TEXINFOS		= doc/fdl-1.3.texi doc/gpl-3.0.texi doc/macros.texi
 #page
 #### C language library
 
-AM_CFLAGS		= -Wall
+AM_CFLAGS		= -I $(srcdir)/src -Wall
 
 vicare_ao_CURRENT	= @vicare_ao_VERSION_INTERFACE_CURRENT@
 vicare_ao_REVISION	= @vicare_ao_VERSION_INTERFACE_REVISION@
@@ -107,17 +107,10 @@ clean-fasl:
 VICARE_AO_PLAIN_TESTS		= \
 	tests/test-vicare-ao.sps
 
-# VICARE_AO_NAU_TESTS		= \
-# 	tests/test-nausicaa-ao.sps
-
 TESTS	= $(VICARE_AO_PLAIN_TESTS)
-# if WANT_NAUSICAA
-# TESTS	+= $(VICARE_AO_NAU_TESTS)
-# endif
 
 EXTRA_DIST += \
 	$(VICARE_AO_PLAIN_TESTS)		\
-	$(VICARE_AO_NAU_TESTS)			\
 	\
 	tests/demo-for-plain-documentation.sps
 

@@ -33,7 +33,7 @@
 
 @c To be used as @value{COPYRIGHT_YEARS} whenever we need to include the
 @c list of copyright years.
-@set COPYRIGHT_YEARS            2015
+@set COPYRIGHT_YEARS            2015, 2017
 
 @c ------------------------------------------------------------
 
@@ -41,7 +41,6 @@
 @set FOREIGN_VERSION            1.2.0
 @set FOREIGN_URL                @url{http:/@//@/xiph.org/@/}
 @set FOREIGN_SCHEME_LIB         @library{vicare multimedia ao}
-@set NAUSICAA_SCHEME_LIB        @library{nausicaa multimedia ao}
 @set GITHUB_URL                 @url{http://github.com/marcomaggi/vicare-ao}
 @set BITBUCKET_URL              @url{https://bitbucket.org/marcomaggi/vicare-ao}
 @set DOWNLOAD_URL               @url{https://bitbucket.org/marcomaggi/vicare-ao/downloads}
@@ -861,7 +860,7 @@ of 32-bit slots; each with format:
 @end example
 
 @noindent
-where @acronym{}LSB stands for Least Significant Byte and @acronym{MSB}
+where @acronym{LSB} stands for Least Significant Byte and @acronym{MSB}
 stands for Most Significant Byte.
 @end defun
 
